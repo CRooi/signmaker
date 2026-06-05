@@ -2,11 +2,21 @@
 这是一个基于HTML + JS的导视标牌生成器，目前只支持桌面端使用。
 操作逻辑类似于Auto Layout + 组件库，如果使用过Figma应该挺容易习惯的。
 
-## 功能
+A HTML + JS based viewfinding signages maker. Currently only for desktop.
+The idea is inspired by Auto Layout & Components Library, so if you used Figma this should be pretty easy to use.
+
+## 功能 Features
 * 通过组件系统直观的制作、编辑导视标牌。
+* Use the Component system to make & edit signage.
 * 内置光照，吊杆效果，模拟现实导视标牌效果。
+* Built-in lighting & hanger effect, simulating real-life signages.
 * 导出标牌为PNG / SVG格式图片。
+* Export your signs as PNG or SVG file.
 * 通过Add-on系统，制作你想象中的导视标牌。（制作中）
+* Build your dream signages with the Add-on system. (WIP)
+
+## 更新 Update log
+暂无。
 
 ## To-do / Roadmap
 - [x] 一个可拖拽放置组件的“标牌”画布
@@ -23,3 +33,5 @@
 - [ ] 完成Addon支持 - 制作一个Sample Addon（申通）
 - [ ] 写一个操作指南
 - [ ] 支持手机端操作
+- [ ] v1.0 发布
+- [ ] 制作更多Addon - JR / MTR / ...
