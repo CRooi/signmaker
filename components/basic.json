@@ -4,16 +4,36 @@
     "name": "图标",
     "description": "",
     "category": "basic",
-    "feature":"selectIcon rotateIcon",
-    "iconFiles": ["arrow.svg", "default.svg", "monorail.svg", "train.svg"],
-    "html": "<img src='icon/crt/default.svg' alt='ICON' class='icon'>"
+    "feature": "selectIcon rotateIcon",
+    "useList": false,
+    "iconFiles": [
+      "icon/accessible_elevator_platform.svg",
+      "icon/metro.svg",
+      "icon/arrow.svg",
+      "icon/accessible_restroom.svg",
+      "icon/tickets.svg",
+      "icon/restroom.svg",
+      "icon/monorail.svg",
+      "icon/ellipse.svg",
+      "icon/train.svg",
+      "icon/accessible_passage.svg",
+      "icon/accessible_ramp.svg",
+      "icon/default.svg",
+      "icon/stairs.svg",
+      "icon/accessible.svg",
+      "icon/exit.svg",
+      "icon/waiting.svg",
+      "icon/elevator.svg",
+      "icon/nursing.svg"
+    ],
+    "html": "<img src='icon/default.svg' alt='ICON' class='icon'>"
   },
   {
     "id": "largeText",
     "name": "大号文字",
     "description": "",
     "category": "basic",
-    "feature":"editText",
+    "feature": "editText",
     "html": "<span class='largeText'>0</span>"
   },
   {
@@ -21,7 +41,7 @@
     "name": "文本框",
     "description": "",
     "category": "basic",
-    "feature":"editText",
+    "feature": "editText",
     "html": "<div class='textBox'><span class='textCN'>文本</span><span class='textEN'>Text</span></div>"
   },
   {
@@ -29,7 +49,7 @@
     "name": "色带",
     "description": "",
     "category": "basic",
-    "feature":"editColor",
+    "feature": "editColor",
     "html": "<div class='colorBar'></div>"
   }
 ]

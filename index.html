@@ -14,7 +14,7 @@
         <div class="logo">
             <img src="logo.png" alt="Sign Maker by Chitose.City">
             <div class="info">
-                <span>alpha release 20260605.2</span>
+                <span>alpha release 20260605.3</span>
                 <a href="https://chitose.city">More on Chitose.City</a>
             </div>
         </div>
@@ -43,6 +43,8 @@
             <div class="propertyPanelTitleRow">
                 <h3 id="propertyPanelTitle">属性面板</h3>
                 <div class="quickActions">
+                    <button id="btnLeft" class="actionBtn" disabled>←</button>
+                    <button id="btnRight" class="actionBtn" disabled>→</button>
                     <button id="btnDuplicate" class="actionBtn" disabled>复制</button>
                     <button id="btnDelete" class="actionBtn" disabled>删除</button>
                 </div>
@@ -210,8 +212,9 @@
         root.id = componentId || `component${componentCounter++}`;
         applyTagsToElement(root, tags);
 
-        if (component.feature && !isInComposite) {
-            root.dataset.feature = component.feature;
+        if (!isInComposite) {
+            const featureString = `${component.feature ? component.feature + ' ' : ''}advancedOptions`.trim();
+            root.dataset.feature = featureString;
             root.addEventListener('click', (e) => {
                 e.stopPropagation();
                 openPropertyPanel(root);
@@ -225,9 +228,7 @@
         composite.className = `composite ${item.id}`;
         composite.id = `component${componentCounter++}`;
 
-        if (item.feature) {
-            composite.dataset.feature = item.feature;
-        }
+        composite.dataset.feature = `${item.feature ? item.feature + ' ' : ''}advancedOptions`.trim();
 
         item.ingredients.forEach((ingredient) => {
             const basic = basicComponents.find((comp) => comp.id === ingredient.componentId);
@@ -253,9 +254,9 @@
 
         // Every zone gets the zoneWidth feature
         if (zone.classList.contains('lineColor')) {
-            zone.dataset.feature = 'selectLine zoneWidth zoneTextWidth zoneAlign';
+            zone.dataset.feature = 'selectLine zoneTextWidth zoneAlign advancedOptions';
         } else {
-            zone.dataset.feature = 'zoneWidth zoneTextWidth zoneAlign';
+            zone.dataset.feature = 'zoneTextWidth zoneAlign advancedOptions';
         }
 
         zone.addEventListener('click', (e) => {
@@ -454,10 +455,46 @@
         }
         const btnDuplicate = document.getElementById('btnDuplicate');
         const btnDelete = document.getElementById('btnDelete');
+        const btnLeft = document.getElementById('btnLeft');
+        const btnRight = document.getElementById('btnRight');
+
+        const isMoveable = selectedElement && !selectedElement.classList.contains('zone') && selectedElement.closest('.zone');
+        let canMoveLeft = false;
+        let canMoveRight = false;
+        if (isMoveable) {
+            const zone = selectedElement.closest('.zone');
+            const siblings = Array.from(zone.children).filter(child => !child.classList.contains('insert-line'));
+            const index = siblings.indexOf(selectedElement);
+            canMoveLeft = index > 0;
+            canMoveRight = index >= 0 && index < siblings.length - 1;
+        }
+
         if (btnDuplicate && btnDelete) {
             btnDuplicate.disabled = !selectedElement;
             btnDelete.disabled = !selectedElement;
         }
+        if (btnLeft) btnLeft.disabled = !canMoveLeft;
+        if (btnRight) btnRight.disabled = !canMoveRight;
+    }
+
+    function moveSelectedElement(direction) {
+        if (!selectedElement) return;
+        const zone = selectedElement.closest('.zone');
+        if (!zone || selectedElement.classList.contains('zone')) return;
+
+        const siblings = Array.from(zone.children).filter(child => !child.classList.contains('insert-line'));
+        const index = siblings.indexOf(selectedElement);
+        if (index === -1) return;
+
+        if (direction === 'left' && index > 0) {
+            zone.insertBefore(selectedElement, siblings[index - 1]);
+        } else if (direction === 'right' && index < siblings.length - 1) {
+            zone.insertBefore(siblings[index + 1], selectedElement);
+        } else {
+            return;
+        }
+
+        openPropertyPanel(selectedElement);
     }
 
     function duplicateSelectedElement() {
@@ -563,6 +600,78 @@
         return '选中组件';
     }
 
+    function getCurrentStretchRatio(element) {
+    // 优先从 dataset 中获取精准的物理记录，防止浮点数转换误差
+    return parseFloat(element.dataset.stretchRatio) || 1;
+}
+
+function applyHorizontalStretch(element, ratio) {
+    if (!element) return;
+    
+    // 1. 初始化：精准记录最原始的纯物理总宽度（只记录一次）
+    if (!element.dataset.originalWidth) {
+        // 强制确保父容器使用标准的 border-box
+        element.style.boxSizing = 'border-box';
+        element.dataset.originalWidth = element.offsetWidth;
+        
+        // 清除可能残留的父级 transformOrigin 和 padding 动态干扰，恢复原生 CSS
+        element.style.transformOrigin = '';
+        element.style.transform = (element.style.transform || '').replace(/scaleX\([^\)]+\)/g, '').trim();
+    }
+    
+    const originalWidth = parseFloat(element.dataset.originalWidth);
+    
+    // 2. 【核心步骤一】：父容器只改变真实 width，让画布完美响应式伸缩
+    // 这样右侧绝对不会出现任何空隙、白边或边距不对等的问题
+    if (!isNaN(originalWidth) && originalWidth > 0) {
+        element.style.width = `${originalWidth * ratio}px`;
+    }
+    
+    // 3. 【核心步骤二】：寻找或创建一个专门用来让内部文字/图标产生“压扁拉伸”视觉形变的包裹层
+    // 这样既能让文字变形，又绝对不会破坏外层父容器的盒模型和边距
+    let contentWrapper = element.querySelector('.stretch-content-wrapper');
+    
+    if (!contentWrapper) {
+        // 如果没有，就动态创建一个，把父容器里的所有子节点丢进去
+        contentWrapper = document.createElement('div');
+        contentWrapper.className = 'stretch-content-wrapper';
+        
+        // 关键样式：让包裹层撑满父容器的内容区，并设置形变原点为左侧
+        contentWrapper.style.width = '100%';
+        contentWrapper.style.height = '100%';
+        contentWrapper.style.display = 'flex';
+        contentWrapper.style.alignItems = 'center';
+        contentWrapper.style.transformOrigin = 'left center';
+        
+        // 转移子节点
+        while (element.firstChild) {
+            contentWrapper.appendChild(element.firstChild);
+        }
+        element.appendChild(contentWrapper);
+    }
+    
+    // 4. 【核心步骤三】：只对内部包裹层进行视觉上的 scaleX 压扁或拉伸
+    // 因为父容器变宽了 ratio 倍，内部包裹层如果再放大 ratio 倍，文字就会二次变形。
+    // 为了让文字随着容器变宽而等比例拉伸，同时完美契合边界：
+    // 当父级 width 变为 originalWidth * ratio 时，内部由于是 width: 100%，它已经变宽了。
+    // 如果想要文字产生“硬挤压/硬拉伸”的滤镜效果，我们要计算它和父级宽度的比例关系。
+    
+    // 清理旧的 scaleX
+    const transform = contentWrapper.style.transform || '';
+    const parts = [];
+    (transform.match(/\w+\([^\)]+\)/g) || []).forEach(part => {
+        if (/^scaleX\(/.test(part) || /^scale\(/.test(part)) return;
+        parts.push(part);
+    });
+    
+    // 直接对内部内容施加拉伸率
+    parts.push(`scaleX(${ratio})`);
+    contentWrapper.style.transform = parts.join(' ').trim();
+    
+    // 保持内容在缩放时不溢出或者紧贴
+    contentWrapper.style.width = `${100 / ratio}%`;
+}
+
     function rgb2hex(rgb) {
         if (!rgb) return '#b0b0b0';
         if (/^#[0-9A-F]{6}$/i.test(rgb)) return rgb;
@@ -596,9 +705,44 @@
         const features = featuresStr.split(' ');
 
         features.forEach(featKey => {
+            if (featKey === 'advancedOptions') {
+                const group = document.createElement('div');
+                group.className = `featureGroup ${featKey}`;
+                group.innerHTML = `<h4>高级选项</h4>`;
+
+                const canvasEl = document.getElementById('canvas');
+                const isCanvasFixed = canvasEl.style.width && canvasEl.style.width !== 'auto';
+                const listEl = document.createElement('div');
+                listEl.className = 'optionListGrid';
+
+                const currentFlex = element.style.flex;
+                const currentWidthVal = (currentFlex === '1' || currentFlex === '1 1 0px' || currentFlex === '1 1 0%') ? 'fill' : 'fit';
+
+                [{ value: 'fit', label: '适应' }, { value: 'fill', label: '填充' }].forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'optionBtn';
+                    btn.textContent = opt.label;
+                    if (opt.value === 'fill' && !isCanvasFixed) {
+                        btn.disabled = true;
+                        btn.title = '仅限固定宽度';
+                    }
+                    if (opt.value === currentWidthVal) btn.classList.add('active');
+                    btn.addEventListener('click', () => {
+                        element.style.flex = (opt.value === 'fill') ? '1' : 'none';
+                        listEl.querySelectorAll('.optionBtn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    });
+                    listEl.appendChild(btn);
+                });
+
+                group.appendChild(listEl);
+                container.appendChild(group);
+                return;
+            }
+
             if (featKey === 'zoneWidth') {
                 const group = document.createElement('div');
-                group.className = 'featureGroup';
+                group.className = `featureGroup ${featKey}`;
                 group.innerHTML = `<h4>宽度设置</h4>`;
 
                 const canvasEl = document.getElementById('canvas');
@@ -634,7 +778,7 @@
 
             if (featKey === 'zoneTextWidth') {
                 const group = document.createElement('div');
-                group.className = 'featureGroup';
+                group.className = `featureGroup ${featKey}`;
                 group.innerHTML = `<h4>字宽设置</h4>`;
 
                 const listEl = document.createElement('div');
@@ -669,7 +813,7 @@
 
             if (featKey === 'zoneAlign') {
                 const group = document.createElement('div');
-                group.className = 'featureGroup';
+                group.className = `featureGroup ${featKey}`;
                 group.innerHTML = `<h4>对齐方向</h4>`;
 
                 const listEl = document.createElement('div');
@@ -724,7 +868,7 @@
             if (!config) return;
 
             const group = document.createElement('div');
-            group.className = 'featureGroup';
+            group.className = `featureGroup ${featKey}`;
             group.innerHTML = `<h4>${config.label}</h4>`;
 
             config.controls.forEach(control => {
@@ -791,11 +935,24 @@
                     const isLineDropdown = (control.label && control.label.includes('线路')) || featKey === 'selectLine';
                     const isIconDropdown = (control.label && control.label.includes('图标')) || featKey === 'selectIcon';
 
+                    // 1. 寻找对应的组件配置（支持复合组件与基础组件类名精确查找）
                     let componentConfig = compositeComponents.find(c => classes.includes(c.id));
                     if (!componentConfig && isIconDropdown) {
-                        componentConfig = basicComponents.find(c => c.id === 'icon');
+                        componentConfig = basicComponents.find(c => classes.includes(c.id)) || basicComponents.find(c => c.id === 'icon');
                     }
-                    const useList = componentConfig && componentConfig.useList === true;
+
+                    // 2. 建立绝对严格的 useList 推导链，全面支持明确声明的 false
+                    let useList = false;
+                    if (control.useList !== undefined) {
+                        // 2a. 优先遵守 features.json 控件维度的声明
+                        useList = (control.useList === true || control.useList === 'true');
+                    } else if (componentConfig && componentConfig.useList !== undefined) {
+                        // 2b. 其次遵守该基础/复合组件在配置里指定的声明
+                        useList = (componentConfig.useList === true || componentConfig.useList === 'true');
+                    } else {
+                        // 2c. 仅在两端都没有声明时，进行行为兜底：线路不使用网格，图标默认使用网格
+                        useList = isIconDropdown;
+                    }
 
                     if (useList) {
                         input = document.createElement('div');
@@ -974,13 +1131,13 @@
                         }
                     }
                 }
-
                 if (input) row.appendChild(input);
                 group.appendChild(row);
             });
             container.appendChild(group);
         });
     }
+    
 
     // Effect toggles
     function toggleEffect(type, forceState) {
@@ -1361,9 +1518,9 @@
             zone.dataset.category = zoneData.category;
 
             if (zone.classList.contains('lineColor')) {
-                zone.dataset.feature = 'selectLine zoneWidth zoneTextWidth zoneAlign';
+                zone.dataset.feature = 'selectLine zoneTextWidth zoneAlign advancedOptions';
             } else {
-                zone.dataset.feature = 'zoneWidth zoneTextWidth zoneAlign';
+                zone.dataset.feature = 'zoneTextWidth zoneAlign advancedOptions';
             }
 
             if (zoneData.style) {
@@ -1887,8 +2044,12 @@
     document.addEventListener('DOMContentLoaded', () => {
         const btnDuplicate = document.getElementById('btnDuplicate');
         const btnDelete = document.getElementById('btnDelete');
+        const btnLeft = document.getElementById('btnLeft');
+        const btnRight = document.getElementById('btnRight');
         if (btnDuplicate) btnDuplicate.addEventListener('click', duplicateSelectedElement);
         if (btnDelete) btnDelete.addEventListener('click', deleteSelectedElement);
+        if (btnLeft) btnLeft.addEventListener('click', () => moveSelectedElement('left'));
+        if (btnRight) btnRight.addEventListener('click', () => moveSelectedElement('right'));
 
         const btnZoomOut = document.getElementById('btnZoomOut');
         const btnZoomIn = document.getElementById('btnZoomIn');

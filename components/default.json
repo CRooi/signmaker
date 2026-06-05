@@ -151,7 +151,7 @@
       "name": "线路号",
       "description": "",
       "category": "enter",
-      "feature": "selectLine",
+      "feature": "selectLine editText",
       "type": "composite",
       "colorBarAdjustment": true,
       "ingredients": [
@@ -181,7 +181,7 @@
       "name": "线路号",
       "description": "文字线路",
       "category": "enter",
-      "feature": "selectLine",
+      "feature": "selectLine editText",
       "type": "composite",
       "colorBarAdjustment": true,
       "ingredients": [

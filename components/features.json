@@ -74,11 +74,6 @@
         "type": "color",
         "target": ".colorBar",
         "label": "自定义线路色"
-      },
-      {
-        "type": "text",
-        "target": ".largeText",
-        "label": "线路号"
       }
     ]
   },
@@ -88,6 +83,20 @@
       {
         "type": "dropdown",
         "target": "img"
+      }
+    ]
+  },
+  "advancedOptions": {
+    "label": "高级选项",
+    "controls": [
+      {
+        "type": "dropdown",
+        "label": "组件宽度",
+        "options": [
+          { "name": "适应", "value": "fit" },
+          { "name": "填充", "value": "fill" }
+        ],
+        "useList": true
       }
     ]
   },
