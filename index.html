@@ -815,27 +815,36 @@ function applyHorizontalStretch(element, ratio) {
                 const group = document.createElement('div');
                 group.className = `featureGroup ${featKey}`;
                 group.innerHTML = `<h4>对齐方向</h4>`;
-
+            
                 const listEl = document.createElement('div');
                 listEl.className = 'optionListGrid';
-
+            
                 const firstAlignText = element.querySelector('.largeText, .textCN, .textEN');
                 const currentAlignVal = element.dataset.zoneAlign
                     || (firstAlignText ? (firstAlignText.style.textAlign || 'left') : 'left');
-
+            
                 const applyZoneAlignment = (alignValue) => {
                     element.dataset.zoneAlign = alignValue;
+                
+                    // 1. 映射并设置 zone (element) 的 justify-content 属性
+                    const justifyMapping = {
+                        'left': 'flex-start',
+                        'center': 'center',
+                        'right': 'flex-end'
+                    };
+                    element.style.justifyContent = justifyMapping[alignValue] || 'flex-start';
+                
                     // Apply text-align to all text elements within the zone
                     const textEls = element.querySelectorAll('.largeText, .textCN, .textEN');
                     textEls.forEach(el => { el.style.textAlign = alignValue; });
-
+                
                     // Apply colorBarAdjustment and invertOrder per composite config
                     const compositeEls = element.querySelectorAll('.composite');
                     compositeEls.forEach(compEl => {
                         const classes = compEl.className.split(/\s+/);
                         const compConfig = compositeComponents.find(c => classes.includes(c.id));
                         if (!compConfig) return;
-
+                    
                         if (compConfig.colorBarAdjustment) {
                             const colorBar = compEl.querySelector('.colorBar');
                             if (colorBar) colorBar.style.order = (alignValue === 'right') ? '99' : '';
@@ -845,7 +854,7 @@ function applyHorizontalStretch(element, ratio) {
                         }
                     });
                 };
-
+            
                 [{ value: 'left', label: '左' }, { value: 'center', label: '中' }, { value: 'right', label: '右' }].forEach(opt => {
                     const btn = document.createElement('button');
                     btn.className = 'optionBtn';
@@ -858,7 +867,7 @@ function applyHorizontalStretch(element, ratio) {
                     });
                     listEl.appendChild(btn);
                 });
-
+            
                 group.appendChild(listEl);
                 container.appendChild(group);
                 return;
