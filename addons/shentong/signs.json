@@ -1,0 +1,27 @@
+{
+  "canvasWidths": [
+    { "id": "auto", "name": "自适应", "value": "auto" },
+    { "id": "800", "name": "800 px", "value": 800 },
+    { "id": "1000", "name": "1000 px", "value": 1000 },
+    { "id": "1200", "name": "1200 px", "value": 1200 },
+    { "id": "1400", "name": "1400 px", "value": 1400 },
+    { "id": "1600", "name": "1600 px", "value": 1600 },
+    { "id": "1800", "name": "1800 px", "value": 1800 },
+    { "id": "2000", "name": "2000 px", "value": 2000 }
+  ],
+  "signStyles": [
+    {
+      "id": "big_sign",
+      "name": "大吊牌",
+      "borderWidth": "6px 6px 10px 6px",
+      "borderStyle": "solid",
+      "borderColor": "#151515",
+      "hasMask": false,
+      "hanger": {
+        "width": 15,
+        "height": 120,
+        "background": "linear-gradient(90deg, #111111 0%, #3B3B3B 35.94%, #0B0B0B 100%)"
+      }
+    }
+  ]
+}

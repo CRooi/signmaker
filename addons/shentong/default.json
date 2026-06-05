@@ -1,0 +1,250 @@
+{
+  "categories": [
+    {
+      "id": "enter",
+      "nameCN": "进站",
+      "nameEN": "ENTER"
+    },
+    {
+      "id": "exit",
+      "nameCN": "出站",
+      "nameEN": "EXIT"
+    },
+    {
+      "id": "facility",
+      "nameCN": "设施",
+      "nameEN": "FACILITY"
+    },
+    {
+      "id": "misc",
+      "nameCN": "其他",
+      "nameEN": "MISC"
+    }
+  ],
+  "lines": [
+    {
+      "id": "L1",
+      "number": "1",
+      "nameCN": "号线",
+      "nameEN": "Line 1",
+      "color": "#E60012"
+    },
+    {
+      "id": "L2",
+      "number": "2",
+      "nameCN": "号线",
+      "nameEN": "Line 2",
+      "color": "#009E52"
+    },
+    {
+      "id": "L3",
+      "number": "3",
+      "nameCN": "号线",
+      "nameEN": "Line 3",
+      "color": "#FFD700"
+    },
+    {
+      "id": "L4",
+      "number": "4",
+      "nameCN": "号线",
+      "nameEN": "Line 4",
+      "color": "#0054A6"
+    }
+  ],
+  "components": [
+    {
+      "id": "arrow",
+      "name": "箭头",
+      "description": "",
+      "category": "enter",
+      "feature": "selectIcon",
+      "type": "composite",
+      "useList": true,
+      "iconNames": [
+        "直行",
+        "向下",
+        "向左",
+        "向右",
+        "向左上",
+        "向右上",
+        "向左下",
+        "向右下",
+        "左转向上",
+        "左转向下",
+        "右转向上",
+        "右转向下"
+      ],
+      "iconFiles": [
+        "icon/arrows/up.svg",
+        "icon/arrows/down.svg",
+        "icon/arrows/left.svg",
+        "icon/arrows/right.svg",
+        "icon/arrows/upleft.svg",
+        "icon/arrows/upright.svg",
+        "icon/arrows/downleft.svg",
+        "icon/arrows/downright.svg",
+        "icon/arrows/leftup.svg",
+        "icon/arrows/leftdown.svg",
+        "icon/arrows/rightup.svg",
+        "icon/arrows/rightdown.svg"
+      ],
+      "ingredients": [
+        {
+          "componentId": "icon",
+          "props": {
+            "src": "icon/arrows/up.svg"
+          }
+        }
+      ]
+    },
+    {
+      "id": "trainIcon",
+      "name": "制式标志",
+      "description": "",
+      "category": "enter",
+      "feature": "selectIcon",
+      "type": "composite",
+      "iconFiles": ["icon/monorail.svg", "icon/train.svg"],
+      "ingredients": [
+        {
+          "componentId": "icon",
+          "props": {
+            "src": "icon/monorail.svg"
+          }
+        }
+      ]
+    },
+    {
+      "id": "rideIcon",
+      "name": "乘车标志",
+      "description": "",
+      "category": "enter",
+      "feature": "selectIcon",
+      "type": "composite",
+      "iconFiles": ["icon/train.svg", "icon/monorail.svg"],
+      "ingredients": [
+        {
+          "componentId": "icon",
+          "props": {
+            "src": "icon/train.svg"
+          }
+        }
+      ]
+    },
+    {
+      "id": "lineNumber",
+      "name": "线路号",
+      "description": "",
+      "category": "enter",
+      "feature": "selectLine",
+      "type": "composite",
+      "colorBarAdjustment": true,
+      "ingredients": [
+        {
+          "componentId": "colorBar",
+          "props": {
+            "color": "#b0b0b0"
+          }
+        },
+        {
+          "componentId": "largeText",
+          "props": {
+            "text": "0"
+          }
+        },
+        {
+          "componentId": "textBox",
+          "props": {
+            "textCN": "号线",
+            "textEN": "Line 0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "lineNumberText",
+      "name": "线路号",
+      "description": "文字线路",
+      "category": "enter",
+      "feature": "selectLine",
+      "type": "composite",
+      "colorBarAdjustment": true,
+      "ingredients": [
+        {
+          "componentId": "colorBar",
+          "props": {
+            "color": "#b0b0b0"
+          }
+        },
+        {
+          "componentId": "textBox",
+          "props": {
+            "textCN": "东铁线",
+            "textEN": "East Rail Line"
+          }
+        }
+      ]
+    },
+    {
+      "id": "entranceNumber",
+      "name": "出入口号",
+      "description": "",
+      "category": "enter",
+      "feature": "editText",
+      "type": "composite",
+      "invertOrder": true,
+      "ingredients": [
+        {
+          "componentId": "largeText",
+          "props": {
+            "text": "0"
+          }
+        },
+        {
+          "componentId": "textBox",
+          "props": {
+            "textCN": "出入口",
+            "textEN": "Entrance"
+          }
+        }
+      ]
+    },
+        {
+      "id": "stationName",
+      "name": "车站名",
+      "description": "",
+      "category": "enter",
+      "feature": "editText",
+      "type": "composite",
+      "ingredients": [
+        {
+          "componentId": "textBox",
+          "props": {
+            "textCN": "金钟",
+            "textEN": "Admiralty",
+            "textCNStyle": "font-weight:700;text-align:center",
+            "textENStyle": "font-weight:700;text-align:center"
+          }
+        }
+      ]
+    },
+    {
+      "id": "lineColorText",
+      "name": "线路色文字",
+      "description": "",
+      "thumbnailBg": "dark",
+      "category": "misc",
+      "feature": "selectLine editText",
+      "type": "composite",
+      "ingredients": [
+        {
+          "componentId": "textBox",
+          "props": {
+            "textCN": "方向",
+            "textEN": "To"
+          }
+        }
+      ]
+    }
+  ]
+}

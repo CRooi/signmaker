@@ -1,0 +1,921 @@
+/* 1. 定义西文字体：Geist Variable (400-700) */
+@font-face {
+    font-family: 'SignMakerFont';
+    src: url('/fonts/Geist[wght].ttf') format('truetype');
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* 2. 定义中文字体群 */
+@font-face {
+    font-family: 'SignMakerFont';
+    src: url('/fonts/IBMPlexSansSC-Text.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+4E00-9FFF, U+3400-4DBF, U+F900-FAFF, U+3000-303F, U+FF00-FFEF;
+}
+
+@font-face {
+    font-family: 'SignMakerFont';
+    src: url('/fonts/IBMPlexSansSC-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+4E00-9FFF, U+3400-4DBF, U+F900-FAFF, U+3000-303F, U+FF00-FFEF;
+}
+
+@font-face {
+    font-family: 'SignMakerFont';
+    src: url('/fonts/IBMPlexSansSC-SemiBold.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+4E00-9FFF, U+3400-4DBF, U+F900-FAFF, U+3000-303F, U+FF00-FFEF;
+}
+
+@font-face {
+    font-family: 'SignMakerFont';
+    src: url('/fonts/IBMPlexSansSC-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+4E00-9FFF, U+3400-4DBF, U+F900-FAFF, U+3000-303F, U+FF00-FFEF;
+}
+
+@font-face {
+  font-family: 'Noto Sans';
+  /* 请确保这里的路径正确指向你的字体文件 */
+  src: url('fonts/NotoSans-VariableFont_wdth,wght.ttf') format('truetype-variations'),
+       url('fonts/NotoSans-VariableFont_wdth,wght.ttf') format('truetype');
+  
+  /* 定义字重（Weight）的可变范围，通常 Noto Sans 的范围是 100 到 900 */
+  font-weight: 100 900;
+  
+  /* 定义字宽（Width/Stretch）的可变范围，通常用百分比表示 */
+  font-stretch: 62.5% 100%;
+  
+  font-style: normal;
+  font-display: swap;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+body {
+    font-family: "SignMakerFont", sans-serif;
+    margin: 0;
+    display: flex;
+    flex-flow: row nowrap;
+    width: 100%;
+    background: #f9f9f9;
+}
+
+.leftPanel {
+    padding: 12px;
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 12px;
+    box-sizing: border-box;
+    box-shadow: inset -2px 0px 2px #DCDCDC;
+}
+
+.componentsPanel {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+}
+
+#categoriesList {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 8px;
+    padding: 12px;
+    border: 2px solid #ccc;
+    background-image: url(icon/ellipse.svg);
+    background-repeat: repeat;
+}
+
+#categoriesList button {
+    display: inline-flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    width: 60px;
+    border: 2px solid #ccc;
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.2;
+    border-radius: 4px;
+    box-shadow: 0px 0px 0px rgba(0, 0, 0, 0);
+    transition: all 0.3s ease;
+}
+
+#categoriesList> :nth-child(1) {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 35.34%, rgba(131, 131, 131, 0.15) 63.63%), #f0f0f0;
+}
+
+#categoriesList> :nth-child(2) {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 35.34%, rgba(131, 131, 131, 0.15) 63.63%), #FFd701;
+}
+
+#categoriesList> :nth-child(3) {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 35.34%, rgba(131, 131, 131, 0.15) 63.63%), #333F49;
+    color: #F0F0F0;
+}
+
+#categoriesList button.activeCategory {
+    transition: all 0.3s ease;
+    font-weight: 500;
+    border-radius: 100px;
+    box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.35);
+}
+
+#categoriesList button .categoryEnglish {
+    font-family: 'SignMakerFont';
+    font-size: 10px;
+    opacity: 75%;
+}
+
+/* 完美恢复你精准的 3列组件栏宽度计算与排布 */
+#componentsList {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 16px;
+    padding: 12px;
+    border: 2px solid #d0d0d0dd;
+    background-image: url(icon/ellipse.svg);
+    background-repeat: repeat;
+    width: calc(120px * 3 + 8px * 4 + 18px);
+    flex: 1;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+#componentsList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#componentsList::-webkit-scrollbar-thumb {
+    background-color: #c1c1c1;
+    border-radius: 4px;
+    border-right: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+#componentsList::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.componentGroup {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 10px;
+    border-radius: 4px;
+}
+
+h3 {
+    margin: 0;
+    padding: 2px 6px;
+    background: #eaeaea;
+    color: #5C5C5C;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.componentGroupItems {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 8px;
+}
+
+.componentItem {
+    display: inline-flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    width: 120px;
+    height: 150px;
+    padding: 0;
+    border: 2px solid #d0d0d0dd;
+    border-radius: 4px;
+    background: #f0f0f0;
+    cursor: pointer;
+    text-align: center;
+}
+
+.componentItem:hover {
+    background: #F3F3F3;
+}
+
+.componentThumbnail {
+    width: 100%;
+    height: 100px;
+    object-fit: contain;
+    background: #FFFFFF;
+    padding: 20px 10px;
+    box-sizing: border-box;
+}
+
+.componentTextWrapper {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0px;
+    height: 50px;
+}
+
+.componentName {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.componentDescription {
+    font-size: 12px;
+    color: #888888;
+    line-height: 1.3;
+}
+
+.emptyState {
+    color: #8A8A8A;
+    font-size: 13px;
+}
+
+.rightPanel {
+    flex: 1;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    background: #FFFFFF;
+}
+
+.propertyPanel {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    /* 利用精算出的偏移量在右侧视口中央悬浮，完全不影响左面板 */
+    transform: translateX(-50%);
+    width: 360px;
+    max-height: 280px;
+    background: #f0f0f0;
+    padding: 12px;
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 8px;
+    z-index: 5;
+    box-sizing: border-box;
+}
+
+.propertyPanelTitleRow {
+    margin: -12px -12px 4px -12px;
+    padding: 6px 12px;
+    background: #F0F0F0;
+    color: #444;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #bcbcbc;
+}
+
+.propertyPanelTitleRow h3 {
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.quickActions {
+    display: flex;
+    gap: 6px;
+}
+
+.actionBtn {
+    background: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 400px;
+    padding: 2px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    color: #333;
+}
+
+.actionBtn:hover:not(:disabled) {
+    background: #e6e6e6;
+    border-color: #adadad;
+}
+
+.actionBtn:active:not(:disabled) {
+    background: #cccccc;
+}
+
+.actionBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#btnDelete:hover:not(:disabled) {
+    background: #ff4d4f;
+    border-color: #ff4d4f;
+    color: #fff;
+}
+
+.featureControls {
+    overflow-y: auto;
+    display: flex;
+    flex-flow: row wrap;
+    gap: 10px;
+}
+
+.featureGroup {
+    display: flex;
+    flex-flow: row wrap;
+    flex: 1;
+    gap: 8px;
+    min-width: 100px;
+}
+
+.featureGroup h4 {
+    width: 100%;
+    margin: 0 0 6px 0;
+    font-size: 12px;
+    color: #333;
+    border-bottom: 1px solid #bcbcbc;
+    padding-bottom: 2px;
+}
+
+.controlRow {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+    flex: 1 1 0px;
+    min-width: 80px;
+}
+
+.controlRow label {
+    white-space: nowrap;
+    font-size: 11px;
+}
+
+.controlRow input[type="text"],
+.controlRow select {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    padding: 4px;
+    border: 1px solid #CCC;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.controlRow input[type="color"] {
+    width: 32px;
+    height: 20px;
+    border: 1px solid #CCC;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+/* 预设线路板网格 UI 样式 */
+.presetLineGrid {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 6px;
+    max-height: 100px;
+    overflow-y: auto;
+    padding: 4px;
+    border: 1px solid #EAEAEA;
+    background: #FAFAFA;
+}
+
+.presetLineBtn {
+    display: inline-flex;
+    align-items: center;
+    background: #FFFFFF;
+    border: 1px solid #D1D1D1;
+    padding: 3px 6px;
+    font-size: 11px;
+    cursor: pointer;
+    min-width: 76px;
+    box-sizing: border-box;
+}
+
+.presetLineBtn:hover {
+    background: #F5F5F5;
+}
+
+.canvasViewer {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    cursor: default;
+}
+
+.canvasViewer.dragging {
+    cursor: grabbing !important;
+}
+
+.canvasViewer::-webkit-scrollbar {
+    height: 0px;
+    background: transparent;
+}
+
+.rightPanel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 10;
+
+    background-image:
+        linear-gradient(to right, #FFFFFF 0%, rgba(255, 255, 255, 0) 100%),
+        linear-gradient(to left, #FFFFFF 0%, rgba(255, 255, 255, 0) 100%);
+    background-position: left top, right top;
+    background-size: 24px 100%;
+    background-repeat: no-repeat;
+}
+
+.logo img {
+    height: 40px;
+}
+
+#canvas {
+    position: relative;
+    display: flex;
+    flex-flow: row nowrap;
+    height: 90px;
+    width: max-content;
+    min-width: 120px;
+    flex-shrink: 0;
+    background-color: white;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    margin: auto;
+}
+
+#canvas::after {
+    content: '';
+    position: absolute;
+    top: calc(0px - var(--canvas-border-width-top, 6px));
+    left: calc(0px - var(--canvas-border-width-left, 6px));
+    right: calc(0px - var(--canvas-border-width-right, 6px));
+    bottom: calc(0px - var(--canvas-border-width-bottom, 10px));
+    border-color: var(--canvas-border-color, #151515);
+    border-width: var(--canvas-border-width, 6px 6px 10px 6px);
+    border-style: var(--canvas-border-style, solid);
+    border-radius: inherit;
+    pointer-events: none;   /* 确保鼠标事件可以穿透，不影响拖拽组件 */
+    z-index: 10;             /* 层级高于挂架，完美压住挂架边缘 */
+    box-sizing: border-box;
+}
+
+.largeText,
+.textCN,
+.textEN,
+.textBox {
+    white-space: nowrap;
+}
+
+/* 核心注入：变色线路区段（Zone）系统 */
+.zone {
+    padding: 0 16px;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 16px;
+    height: 100%;
+}
+
+.zone.lineColor {
+    --current-line-bg: #b0b0b0;
+    /* 动态线路默认底色 */
+    background-color: var(--current-line-bg);
+    --fg-color: #FFFFFF;
+    /* 强制覆盖其内部子文本变为白字 */
+}
+
+/* Ensure all text and icons inside lineColor zone turn white */
+.zone.lineColor .largeText,
+.zone.lineColor .textCN,
+.zone.lineColor .textEN {
+    color: #FFFFFF !important;
+}
+
+.zone.lineColor img,
+.zone.lineColor .icon {
+    filter: brightness(0) invert(1) !important;
+}
+
+.colorBar {
+    width: 24px;
+    height: 72px;
+    margin-top: 18px;
+    color: #b0b0b0;
+}
+
+.icon {
+    height: 56px;
+}
+
+.largeText {
+    font-family: 'Noto Sans';
+    font-size: 77px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    font-feature-settings: 'pnum' on, 'lnum' on;
+    text-box: trim-both cap alphabetic;
+    color: var(--fg-color, inherit);
+    /* 继承 Zone 的变色指令 */
+}
+
+.textBox {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 6px;
+    margin-top: 3px;
+}
+
+.textCN {
+    font-size: 30px;
+    font-weight: 400;
+    text-box: trim-both cap alphabetic;
+    color: var(--fg-color, inherit);
+}
+
+.textEN {
+    font-size: 18px;
+    color: var(--fg-color, inherit);
+}
+
+.composite {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.insert-line {
+    position: absolute;
+    width: 4px;
+    background: #b0b0b0;
+    display: none;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+.selected {
+    outline: 2px solid #FFD701 !important;
+    outline-offset: 2px;
+    z-index: 10;
+}
+
+.zoomControl {
+    display: flex;
+    flex-flow: row nowrap;
+    height: 32px;
+    align-items: center;
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    background: #f0f0f0;
+    border: 1px solid #dcdcdc;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.zoomControl button {
+    width: 32px;
+    height: 100%;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    color: #555;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.zoomControl button:hover:not(:disabled) {
+    background: #f0f0f0;
+    color: #111;
+}
+
+.zoomControl button:active:not(:disabled) {
+    background: #e4e4e4;
+}
+
+.zoomControl button:disabled {
+    color: #ccc;
+    cursor: not-allowed;
+}
+
+.zoomControl div {
+    padding: 0 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #333;
+    min-width: 44px;
+    text-align: center;
+    border-left: 1px solid #eaeaea;
+    border-right: 1px solid #eaeaea;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+    user-select: none;
+}
+
+/* 左下角效果控制样式 */
+.effectsControl {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 6px;
+    height: 32px;
+    align-items: center;
+    position: absolute;
+    left: 24px;
+    bottom: 24px;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.effectsControl button {
+    height: 100%;
+    border: 1px solid #dcdcdc;
+    background: #f0f0f0;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    padding: 0 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    user-select: none;
+    border-right: 1px solid #eaeaea;
+}
+
+.effectsControl button:last-child {
+    border-right: none;
+}
+
+.effectsControl button:hover {
+    background: #f0f0f0;
+    color: #111;
+}
+
+.effectsControl button.active {
+    background: #111;
+    color: #fff;
+}
+
+/* 左上角样式设置面板 */
+.styleSettings {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 8px;
+    z-index: 10;
+    box-sizing: border-box;
+}
+
+.styleSetting {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 4px;
+    font-size: 12px;
+    color: #333;
+}
+
+.styleSetting span {
+    font-weight: 500;
+    white-space: nowrap;
+    color: #717171;
+}
+
+.styleSetting select {
+    width: 120px;
+    padding: 4px;
+    font-size: 11px;
+    background: #f0f0f0;
+    border: 1px solid #dcdcdc;
+    cursor: pointer;
+    font-family: inherit;
+    outline: none;
+}
+
+/* 右上角项目信息与操作 */
+.projectInfo {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: flex-end;
+    text-align: right;
+    z-index: 10;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.projectTitle {
+    font-weight: 600;
+    font-size: 16px;
+    color: #111;
+    cursor: text;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    min-width: 80px;
+    outline: none;
+}
+
+.projectTitle:hover,
+.projectTitle:focus {
+    background-color: #f0f0f0;
+}
+
+.projectActions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.projectActions button {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    cursor: pointer;
+    padding: 0px 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.projectActions button:hover {
+    background: #f0f0f0;
+    color: #111;
+}
+
+.projectActions .divider {
+    color: #b0b0b0;
+    user-select: none;
+}
+
+/* 导出下拉菜单 */
+.exportWrapper {
+    position: relative;
+}
+
+.exportDropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #dcdcdc;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-flow: column nowrap;
+    z-index: 20;
+    margin-top: 4px;
+    overflow: hidden;
+}
+
+.exportDropdown.show {
+    display: flex;
+}
+
+.exportDropdown button {
+    text-align: left;
+    padding: 8px 12px;
+    width: 100%;
+    border-radius: 0;
+    white-space: nowrap;
+}
+
+.exportDropdown button:hover {
+    background: #f5f5f5;
+}
+
+/* 吊杆和光照覆盖层样式 */
+.hanger {
+    position: absolute;
+    bottom: 100%;
+    left: 20%;
+    width: var(--hanger-width, 15px);
+    height: var(--hanger-height, 120px);
+    background: var(--hanger-bg, #333);
+    display: none;
+    z-index: 1;
+}
+
+.hanger.right-hanger {
+    left: auto;
+    right: 20%;
+}
+
+.hanger.active {
+    display: block;
+}
+
+.hanger .fade-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%);
+    display: none;
+    pointer-events: none;
+}
+
+.hanger .fade-overlay.active {
+    display: block;
+}
+
+.lighting-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('icon/lighting.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    display: none;
+    z-index: 999;
+}
+
+.lighting-overlay.active {
+    display: block;
+}
+
+/* 按钮列表选项网格 UI */
+.optionListGrid {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 6px;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.optionBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    padding: 4px 8px;
+    border: none;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #333;
+    font-family: inherit;
+}
+
+.optionBtn:hover {
+    background: #e6e6e6;
+    border-color: #adadad;
+}
+
+.optionBtn.active {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+}

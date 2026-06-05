@@ -1,0 +1,1991 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="global.css">
+    <title>Sign Maker by Chitose.City</title>
+</head>
+
+<body>
+    <section class="leftPanel">
+        <div class="logo">
+            <img src="logo.png" alt="Sign Maker by Chitose.City">
+        </div>
+        <div class="componentsPanel">
+            <div id="categoriesList"></div>
+            <div id="componentsList"></div>
+        </div>
+    </section>
+
+    <section class="rightPanel">
+        <div class="canvasViewer">
+            <div id="canvas">
+                <!-- Hanger elements -->
+                <div class="hanger left-hanger" id="leftHanger">
+                    <div class="fade-overlay" id="leftFade"></div>
+                </div>
+                <div class="hanger right-hanger" id="rightHanger">
+                    <div class="fade-overlay" id="rightFade"></div>
+                </div>
+                <!-- Lighting overlay -->
+                <div class="lighting-overlay" id="lightingOverlay"></div>
+            </div>
+        </div>
+
+        <div class="propertyPanel">
+            <div class="propertyPanelTitleRow">
+                <h3 id="propertyPanelTitle">属性面板</h3>
+                <div class="quickActions">
+                    <button id="btnDuplicate" class="actionBtn" disabled>复制</button>
+                    <button id="btnDelete" class="actionBtn" disabled>删除</button>
+                </div>
+            </div>
+            <div id="featureControls" class="featureControls"><span
+                    style="color: #5b5b5b;text-align: center;">未选中组件</span></div>
+        </div>
+
+        <div class="zoomControl">
+            <button id="btnZoomOut">-</button>
+            <div id="zoomLabel">100%</div>
+            <button id="btnZoomIn">+</button>
+        </div>
+
+        <!-- Bottom-Left Effects Control -->
+        <div class="effectsControl">
+            <button id="btnEffectLight">光照</button>
+            <button id="btnEffectHanger">吊杆</button>
+            <button id="btnEffectFade">渐出</button>
+        </div>
+
+        <div class="styleSettings">
+            <div class="styleSetting" id="canvasSize">
+                <span>画布大小</span>
+                <select id="canvasSizeSelect"></select>
+            </div>
+            <div class="styleSetting" id="projectStyle">
+                <span>项目风格</span>
+                <select id="projectStyleSelect"></select>
+            </div>
+            <div class="styleSetting" id="signStyle">
+                <span>标牌样式</span>
+                <select id="signStyleSelect"></select>
+            </div>
+        </div>
+
+        <div class="projectInfo">
+            <div class="projectTitle" id="projectTitle" contenteditable="true">未命名标牌</div>
+            <div class="projectActions">
+                <button id="btnSave">保存</button>
+                <span class="divider">·</span>
+                <div class="exportWrapper">
+                    <button id="btnExport">导出</button>
+                    <div class="exportDropdown" id="exportDropdown">
+                        <button id="btnExportPNG">PNG 图片</button>
+                        <button id="btnExportPNGNoBorder">PNG 无边框</button>
+                        <button id="btnExportSVG">SVG 图片</button>
+                    </div>
+                </div>
+                <span class="divider">·</span>
+                <button id="btnImport">导入</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+            </div>
+        </div>
+    </section>
+</body>
+<script>
+    async function loadJSON(path) {
+        const res = await fetch(path);
+        if (!res.ok) {
+            throw new Error(`无法加载 JSON：${path} (${res.status})`);
+        }
+        return res.json();
+    }
+
+    function createElementFromHTML(html) {
+        const template = document.createElement('template');
+        template.innerHTML = html.trim();
+        return template.content.firstElementChild;
+    }
+
+    // Global states
+    let componentCounter = 0;
+    let currentDragPayload = null;
+    let zoomLevel = 1.0;
+    const ZOOM_STEP = 0.1;
+    const MIN_ZOOM = 0.5;
+    const MAX_ZOOM = 2.0;
+
+    let featureConfig = {};
+    let presetLinesConfig = [];
+    let compositeComponents = [];
+    let basicComponents = [];
+    let categoriesConfig = [];
+
+    let signsConfig = {};
+    let addonsList = [];
+    let currentAddonId = 'default';
+    let zoneCounter = 0;
+    let selectedElement = null;
+
+    function updateZoom() {
+        const canvas = document.getElementById('canvas');
+        if (canvas) {
+            canvas.style.zoom = zoomLevel;
+        }
+        const zoomLabel = document.getElementById('zoomLabel');
+        if (zoomLabel) {
+            zoomLabel.textContent = `${Math.round(zoomLevel * 100)}%`;
+        }
+        const btnZoomOut = document.getElementById('btnZoomOut');
+        const btnZoomIn = document.getElementById('btnZoomIn');
+        if (btnZoomOut) btnZoomOut.disabled = zoomLevel <= MIN_ZOOM;
+        if (btnZoomIn) btnZoomIn.disabled = zoomLevel >= MAX_ZOOM;
+    }
+
+    function applyTagsToElement(element, tags) {
+        Object.entries(tags).forEach(([key, value]) => {
+            if (value === undefined || value === null) return;
+            const lowerKey = key.toLowerCase();
+
+            // 1. 【修复核心】拦截所有以 'style' 结尾的属性
+            if (lowerKey.endsWith('style')) {
+                const targetKey = lowerKey === 'style' ? '' : key.substring(0, key.toLowerCase().lastIndexOf('style'));
+                const styleTarget = targetKey ? (element.querySelector(`.${targetKey}`) || element.querySelector(`[data-tag="${targetKey}"]`)) : element;
+
+                if (styleTarget) {
+                    styleTarget.style.cssText = (styleTarget.style.cssText || '') + ';' + value;
+                }
+                return;
+            }
+
+            if (lowerKey === 'color') {
+                element.style.backgroundColor = value;
+                return;
+            }
+
+            const target = element.querySelector(`.${key}`) || element.querySelector(`[data-tag="${key}"]`);
+
+            // 2. 处理文本字段
+            if (lowerKey.includes('text') || target) {
+                const textTarget = target || element;
+                textTarget.textContent = value;
+                return;
+            }
+
+            // 处理 src 属性
+            if (lowerKey === 'src') {
+                // If using shentong style addon, resolve relative icon paths
+                let resolvedSrc = value;
+                if (currentAddonId !== 'default' && !value.startsWith('http') && !value.startsWith('data:') && !value.startsWith('./addons/')) {
+                    if (value.startsWith('icon/')) {
+                        resolvedSrc = `./addons/${currentAddonId}/${value}`;
+                    }
+                }
+                if (element.tagName === 'IMG') {
+                    element.src = resolvedSrc;
+                    return;
+                }
+                const innerImg = element.querySelector('img');
+                if (innerImg) {
+                    innerImg.src = resolvedSrc;
+                    return;
+                }
+            }
+
+            const finalTarget = target || element;
+            finalTarget.setAttribute(key, value);
+        });
+    }
+
+    function renderBasicComponent(component, tags = {}, componentId, isInComposite = false) {
+        const root = createElementFromHTML(component.html);
+        if (!root) throw new Error(`基础组件解析失败: ${component.id}`);
+        root.id = componentId || `component${componentCounter++}`;
+        applyTagsToElement(root, tags);
+
+        if (component.feature && !isInComposite) {
+            root.dataset.feature = component.feature;
+            root.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openPropertyPanel(root);
+            });
+        }
+        return root;
+    }
+
+    function renderCompositeComponent(item, basicComponents) {
+        const composite = document.createElement('div');
+        composite.className = `composite ${item.id}`;
+        composite.id = `component${componentCounter++}`;
+
+        if (item.feature) {
+            composite.dataset.feature = item.feature;
+        }
+
+        item.ingredients.forEach((ingredient) => {
+            const basic = basicComponents.find((comp) => comp.id === ingredient.componentId);
+            if (!basic) return;
+            const componentProps = ingredient.props || ingredient.tags || {};
+            const node = renderBasicComponent(basic, componentProps, undefined, true);
+            composite.appendChild(node);
+        });
+
+        composite.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openPropertyPanel(composite);
+        });
+
+        return composite;
+    }
+
+    function createZoneElement(category, zoneClass, canvas, beforeNode) {
+        const zone = document.createElement('div');
+        zone.className = zoneClass;
+        zone.dataset.category = category;
+        zone.id = `zone${zoneCounter++}`;
+
+        // Every zone gets the zoneWidth feature
+        if (zone.classList.contains('lineColor')) {
+            zone.dataset.feature = 'selectLine zoneWidth zoneTextWidth zoneAlign';
+        } else {
+            zone.dataset.feature = 'zoneWidth zoneTextWidth zoneAlign';
+        }
+
+        zone.addEventListener('click', (e) => {
+            if (e.target === zone) {
+                e.stopPropagation();
+                openPropertyPanel(zone);
+            }
+        });
+
+        if (beforeNode && beforeNode.parentNode === canvas) {
+            canvas.insertBefore(zone, beforeNode);
+        } else {
+            canvas.appendChild(zone);
+        }
+        return zone;
+    }
+
+    function appendComponentToZone(category, zoneClass, node, canvas) {
+        const existing = canvas.querySelector(`.zone[data-category="${category}"]`);
+        const zone = existing || createZoneElement(category, zoneClass, canvas);
+        zone.appendChild(node);
+        return zone;
+    }
+
+    let isCategoryButtonsRendered = false;
+
+    function renderCategoryButtons(categories, selectedCategoryId, onSelect) {
+        const list = document.getElementById('categoriesList');
+        if (!list) return;
+
+        if (!isCategoryButtonsRendered) {
+            list.innerHTML = '';
+            categories.forEach((category) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.dataset.id = category.id;
+                button.className = category.id === selectedCategoryId ? 'activeCategory' : '';
+
+                const label = document.createElement('span');
+                label.textContent = category.nameCN || category.id;
+                button.appendChild(label);
+
+                const english = document.createElement('span');
+                english.textContent = category.nameEN || '';
+                english.className = 'categoryEnglish';
+                button.appendChild(english);
+
+                button.addEventListener('click', () => onSelect(category.id));
+                list.appendChild(button);
+            });
+            isCategoryButtonsRendered = true;
+        } else {
+            const buttons = list.querySelectorAll('button');
+            buttons.forEach((button) => {
+                if (button.dataset.id === selectedCategoryId) {
+                    button.classList.add('activeCategory');
+                } else {
+                    button.classList.remove('activeCategory');
+                }
+            });
+        }
+    }
+
+    function createComponentButton(item, kind, onClick) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'componentItem';
+
+        const thumbnail = document.createElement('img');
+        let srcPath = `icon/thumbnail/${item.id}.svg`;
+
+        if (item.ingredients && item.ingredients[0] && item.ingredients[0].props && item.ingredients[0].props.src) {
+            srcPath = item.ingredients[0].props.src.replace('icon/', 'icon/thumbnail/');
+        }
+
+        // Adjust thumbnail path for addons
+        if (currentAddonId !== 'default' && !srcPath.startsWith('http') && !srcPath.startsWith('data:') && !srcPath.startsWith('./addons/')) {
+            srcPath = `./addons/${currentAddonId}/${srcPath}`;
+        }
+
+        thumbnail.src = srcPath;
+        thumbnail.alt = item.name;
+        thumbnail.className = 'componentThumbnail';
+
+        thumbnail.addEventListener('error', () => {
+            let fallbackSrc = item.ingredients && item.ingredients[0] && item.ingredients[0].props && item.ingredients[0].props.src;
+            if (fallbackSrc) {
+                if (currentAddonId !== 'default' && !fallbackSrc.startsWith('http') && !fallbackSrc.startsWith('data:') && !fallbackSrc.startsWith('./addons/')) {
+                    fallbackSrc = `./addons/${currentAddonId}/${fallbackSrc}`;
+                }
+                thumbnail.src = fallbackSrc;
+            }
+        });
+
+        if (item.thumbnailBg === 'dark') {
+            thumbnail.style.backgroundColor = '#b0b0b0';
+        } else {
+            thumbnail.style.backgroundColor = '#FFFFFF';
+        }
+
+        button.appendChild(thumbnail);
+
+        const textWrapper = document.createElement('div');
+        textWrapper.className = 'componentTextWrapper';
+
+        const label = document.createElement('span');
+        label.textContent = item.name;
+        label.className = 'componentName';
+        textWrapper.appendChild(label);
+
+        if (item.description) {
+            const desc = document.createElement('span');
+            desc.textContent = item.description;
+            desc.className = 'componentDescription';
+            textWrapper.appendChild(desc);
+        }
+
+        button.appendChild(textWrapper);
+
+        button.draggable = true;
+        button.addEventListener('dragstart', (e) => {
+            const payload = { kind, id: item.id, category: item.category || kind, name: item.name };
+            currentDragPayload = payload;
+            const payloadStr = JSON.stringify(payload);
+            e.dataTransfer.setData('application/json', payloadStr);
+            e.dataTransfer.setData('text/plain', payloadStr);
+        });
+        button.addEventListener('dragend', () => {
+            currentDragPayload = null;
+            hideInsertLine();
+        });
+        button.addEventListener('click', onClick);
+
+        return button;
+    }
+
+    function createComponentsGroup(title, items, renderItem) {
+        const group = document.createElement('div');
+        group.className = 'componentGroup';
+        const heading = document.createElement('h3');
+        heading.textContent = title;
+        group.appendChild(heading);
+
+        if (items.length === 0) {
+            const empty = document.createElement('div');
+            empty.textContent = '暂无该分类组件';
+            empty.className = 'emptyState';
+            group.appendChild(empty);
+            return group;
+        }
+
+        const list = document.createElement('div');
+        list.className = 'componentGroupItems';
+        items.forEach((item) => { list.appendChild(renderItem(item)); });
+        group.appendChild(list);
+        return group;
+    }
+
+    function renderComponentsList(categoryId, composites, basicComponents, categories, canvas) {
+        const list = document.getElementById('componentsList');
+        if (!list) return;
+        list.innerHTML = '';
+
+        const currentCategory = categories.find((category) => category.id === categoryId);
+        const groupTitle = currentCategory ? `${currentCategory.nameCN || currentCategory.id}组件` : '当前分类组件';
+        const categoryItems = composites.filter((item) => item.category === categoryId);
+
+        const compositeGroup = createComponentsGroup(groupTitle, categoryItems, (item) => {
+            return createComponentButton(item, 'composite', () => {
+                const node = renderCompositeComponent(item, basicComponents);
+                const category = item.id === 'lineColorText' ? 'lineColor' : (item.category || 'default');
+                const zoneClass = item.id === 'lineColorText' ? 'zone lineColor' : `zone ${item.category || 'default'}`;
+                appendComponentToZone(category, zoneClass, node, canvas);
+                openPropertyPanel(node);
+            });
+        });
+        list.appendChild(compositeGroup);
+
+        const basicGroup = createComponentsGroup('基础组件', basicComponents, (basic) => {
+            return createComponentButton(basic, 'basic', () => {
+                const node = renderBasicComponent(basic, {}, undefined, false);
+                appendComponentToZone(basic.category || 'basic', 'zone basic', node, canvas);
+                openPropertyPanel(node);
+            });
+        });
+        list.appendChild(basicGroup);
+    }
+
+    function selectElement(element) {
+        if (selectedElement) {
+            selectedElement.classList.remove('selected');
+        }
+        selectedElement = element;
+        if (selectedElement) {
+            selectedElement.classList.add('selected');
+        }
+        const btnDuplicate = document.getElementById('btnDuplicate');
+        const btnDelete = document.getElementById('btnDelete');
+        if (btnDuplicate && btnDelete) {
+            btnDuplicate.disabled = !selectedElement;
+            btnDelete.disabled = !selectedElement;
+        }
+    }
+
+    function duplicateSelectedElement() {
+        if (!selectedElement) return;
+        const parent = selectedElement.parentNode;
+        if (!parent) return;
+
+        const clone = selectedElement.cloneNode(true);
+
+        // Reset IDs
+        function resetIds(el) {
+            if (el.classList.contains('zone')) {
+                let maxZoneId = 0;
+                document.querySelectorAll('.zone').forEach(z => {
+                    const idNum = parseInt(z.id.replace('zone', ''), 10);
+                    if (!isNaN(idNum) && idNum > maxZoneId) maxZoneId = idNum;
+                });
+                el.id = `zone${maxZoneId + 1}`;
+            } else if (el.id) {
+                el.id = `component${componentCounter++}`;
+            }
+            Array.from(el.children).forEach(child => resetIds(child));
+        }
+
+        resetIds(clone);
+
+        // Bind event listeners
+        function bindEvents(el) {
+            if (el.classList.contains('zone')) {
+                el.addEventListener('click', (e) => {
+                    if (e.target === el) {
+                        e.stopPropagation();
+                        openPropertyPanel(el);
+                    }
+                });
+                Array.from(el.children).forEach(child => {
+                    bindEvents(child);
+                });
+            } else if (el.classList.contains('composite')) {
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openPropertyPanel(el);
+                });
+            } else if (el.dataset.feature) {
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openPropertyPanel(el);
+                });
+            }
+        }
+
+        bindEvents(clone);
+
+        // Insert after selectedElement
+        parent.insertBefore(clone, selectedElement.nextSibling);
+
+        // Select the new clone
+        selectElement(clone);
+        openPropertyPanel(clone);
+    }
+
+    function deleteSelectedElement() {
+        if (!selectedElement) return;
+        const parent = selectedElement.parentNode;
+        if (!parent) return;
+
+        selectedElement.remove();
+
+        // If parent zone is empty, remove it
+        if (parent.classList.contains('zone') && parent.children.length === 0) {
+            parent.remove();
+        }
+
+        selectElement(null);
+        const container = document.getElementById('featureControls');
+        if (container) {
+            container.innerHTML = '<span style="color: #5b5b5b;text-align: center;">未选中组件</span>';
+        }
+        const panelTitle = document.getElementById('propertyPanelTitle');
+        if (panelTitle) {
+            panelTitle.textContent = '属性面板';
+        }
+    }
+
+    function getSelectionTitle(element) {
+        const canvas = document.getElementById('canvas');
+        if (!canvas) return '属性面板';
+
+        const zones = Array.from(canvas.querySelectorAll('.zone'));
+
+        if (element.classList.contains('zone')) {
+            const zoneIndex = zones.indexOf(element) + 1;
+            return `选中 · 区域 ${zoneIndex}`;
+        } else {
+            const parentZone = element.closest('.zone');
+            if (parentZone) {
+                const zoneIndex = zones.indexOf(parentZone) + 1;
+                const children = Array.from(parentZone.children).filter(child => !child.classList.contains('insert-line'));
+                const elementIndex = children.indexOf(element) + 1;
+                return `选中 · 区域 ${zoneIndex} 元素 ${elementIndex}`;
+            }
+        }
+        return '选中组件';
+    }
+
+    function rgb2hex(rgb) {
+        if (!rgb) return '#b0b0b0';
+        if (/^#[0-9A-F]{6}$/i.test(rgb)) return rgb;
+        const rgbMatch = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+        if (!rgbMatch) return '#b0b0b0';
+        function hex(x) {
+            return ("0" + parseInt(x).toString(16)).slice(-2);
+        }
+        return "#" + hex(rgbMatch[1]) + hex(rgbMatch[2]) + hex(rgbMatch[3]);
+    }
+
+    // 属性面板数据绑定
+    function openPropertyPanel(element) {
+        const container = document.getElementById('featureControls');
+        if (!container) return;
+        container.innerHTML = '';
+
+        selectElement(element);
+
+        const panelTitle = document.getElementById('propertyPanelTitle');
+        if (panelTitle) {
+            panelTitle.textContent = getSelectionTitle(element);
+        }
+
+        const featuresStr = element.dataset.feature;
+        if (!featuresStr) {
+            container.innerHTML = '<div class="emptyState">该组件无自定调节属性</div>';
+            return;
+        }
+
+        const features = featuresStr.split(' ');
+
+        features.forEach(featKey => {
+            if (featKey === 'zoneWidth') {
+                const group = document.createElement('div');
+                group.className = 'featureGroup';
+                group.innerHTML = `<h4>宽度设置</h4>`;
+
+                const canvasEl = document.getElementById('canvas');
+                const isCanvasFixed = canvasEl.style.width && canvasEl.style.width !== 'auto';
+
+                const listEl = document.createElement('div');
+                listEl.className = 'optionListGrid';
+
+                const currentFlex = element.style.flex;
+                const currentWidthVal = (currentFlex === '1' || currentFlex === '1 1 0px' || currentFlex === '1 1 0%') ? 'fill' : 'fit';
+
+                [{ value: 'fit', label: '适应' }, { value: 'fill', label: '填充' }].forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'optionBtn';
+                    btn.textContent = opt.label;
+                    if (opt.value === 'fill' && !isCanvasFixed) {
+                        btn.disabled = true;
+                        btn.title = '仅限固定宽度';
+                    }
+                    if (opt.value === currentWidthVal) btn.classList.add('active');
+                    btn.addEventListener('click', () => {
+                        element.style.flex = (opt.value === 'fill') ? '1' : 'none';
+                        listEl.querySelectorAll('.optionBtn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    });
+                    listEl.appendChild(btn);
+                });
+
+                group.appendChild(listEl);
+                container.appendChild(group);
+                return;
+            }
+
+            if (featKey === 'zoneTextWidth') {
+                const group = document.createElement('div');
+                group.className = 'featureGroup';
+                group.innerHTML = `<h4>字宽设置</h4>`;
+
+                const listEl = document.createElement('div');
+                listEl.className = 'optionListGrid';
+
+                // Detect current state from .largeText font-stretch (variable font axis)
+                const largeTextEl = element.querySelector('.largeText');
+                const isCond = largeTextEl && largeTextEl.style.fontStretch === '75%';
+                const currentTextWidthVal = isCond ? 'condensed' : 'normal';
+
+                [{ value: 'normal', label: '标准' }, { value: 'condensed', label: '紧缩' }].forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'optionBtn';
+                    btn.textContent = opt.label;
+                    if (opt.value === currentTextWidthVal) btn.classList.add('active');
+                    btn.addEventListener('click', () => {
+                        listEl.querySelectorAll('.optionBtn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        // Only apply font-stretch to .largeText which uses Noto Sans variable font (wdth axis)
+                        const varFontEls = element.querySelectorAll('.largeText');
+                        varFontEls.forEach(el => {
+                            el.style.fontStretch = (opt.value === 'condensed') ? '75%' : '';
+                        });
+                    });
+                    listEl.appendChild(btn);
+                });
+
+                group.appendChild(listEl);
+                container.appendChild(group);
+                return;
+            }
+
+            if (featKey === 'zoneAlign') {
+                const group = document.createElement('div');
+                group.className = 'featureGroup';
+                group.innerHTML = `<h4>对齐方向</h4>`;
+
+                const listEl = document.createElement('div');
+                listEl.className = 'optionListGrid';
+
+                const firstAlignText = element.querySelector('.largeText, .textCN, .textEN');
+                const currentAlignVal = element.dataset.zoneAlign
+                    || (firstAlignText ? (firstAlignText.style.textAlign || 'left') : 'left');
+
+                const applyZoneAlignment = (alignValue) => {
+                    element.dataset.zoneAlign = alignValue;
+                    // Apply text-align to all text elements within the zone
+                    const textEls = element.querySelectorAll('.largeText, .textCN, .textEN');
+                    textEls.forEach(el => { el.style.textAlign = alignValue; });
+
+                    // Apply colorBarAdjustment and invertOrder per composite config
+                    const compositeEls = element.querySelectorAll('.composite');
+                    compositeEls.forEach(compEl => {
+                        const classes = compEl.className.split(/\s+/);
+                        const compConfig = compositeComponents.find(c => classes.includes(c.id));
+                        if (!compConfig) return;
+
+                        if (compConfig.colorBarAdjustment) {
+                            const colorBar = compEl.querySelector('.colorBar');
+                            if (colorBar) colorBar.style.order = (alignValue === 'right') ? '99' : '';
+                        }
+                        if (compConfig.invertOrder) {
+                            compEl.style.flexDirection = (alignValue === 'right') ? 'row-reverse' : '';
+                        }
+                    });
+                };
+
+                [{ value: 'left', label: '左' }, { value: 'center', label: '中' }, { value: 'right', label: '右' }].forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'optionBtn';
+                    btn.textContent = opt.label;
+                    if (opt.value === currentAlignVal) btn.classList.add('active');
+                    btn.addEventListener('click', () => {
+                        listEl.querySelectorAll('.optionBtn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        applyZoneAlignment(opt.value);
+                    });
+                    listEl.appendChild(btn);
+                });
+
+                group.appendChild(listEl);
+                container.appendChild(group);
+                return;
+            }
+
+            const config = featureConfig[featKey];
+            if (!config) return;
+
+            const group = document.createElement('div');
+            group.className = 'featureGroup';
+            group.innerHTML = `<h4>${config.label}</h4>`;
+
+            config.controls.forEach(control => {
+                let targetEl = control.target ? (element.querySelector(control.target) || (element.matches(control.target) ? element : null)) : element;
+
+                if (control.type === 'color' && !targetEl) {
+                    const zoneEl = element.classList.contains('lineColor') ? element : element.closest('.zone.lineColor');
+                    if (zoneEl) {
+                        targetEl = zoneEl;
+                    }
+                }
+
+                if (control.target && !targetEl) {
+                    return;
+                }
+
+                const row = document.createElement('div');
+                row.className = 'controlRow';
+                if (control.label) {
+                    const labelEl = document.createElement('label');
+                    labelEl.textContent = control.label;
+                    row.appendChild(labelEl);
+                }
+
+                let input;
+                if (control.type === 'text' && targetEl) {
+                    input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = targetEl.textContent;
+                    input.addEventListener('input', () => { targetEl.textContent = input.value; });
+                }
+                else if (control.type === 'color' && targetEl) {
+                    input = document.createElement('input');
+                    input.type = 'color';
+
+                    let initialColor = '#b0b0b0';
+                    if (targetEl.classList.contains('lineColor')) {
+                        initialColor = targetEl.style.getPropertyValue('--current-line-bg').trim() || '#b0b0b0';
+                    } else if (targetEl.style.backgroundColor) {
+                        initialColor = rgb2hex(targetEl.style.backgroundColor);
+                    }
+                    input.value = rgb2hex(initialColor);
+
+                    input.addEventListener('input', () => {
+                        targetEl.style.backgroundColor = input.value;
+                        const parentZone = targetEl.closest('.zone.lineColor') || (targetEl.classList.contains('lineColor') ? targetEl : null);
+                        if (parentZone) parentZone.style.setProperty('--current-line-bg', input.value);
+                    });
+                }
+                else if (control.type === 'select' && targetEl) {
+                    input = document.createElement('select');
+                    control.options.forEach(opt => {
+                        const o = document.createElement('option');
+                        o.value = opt.value; o.textContent = opt.name;
+                        if (targetEl.style.transform === opt.value) {
+                            o.selected = true;
+                        }
+                        input.appendChild(o);
+                    });
+                    input.addEventListener('change', () => { targetEl.style.transform = input.value; });
+                }
+                else if (control.type === 'dropdown') {
+                    const classes = element.className.split(/\s+/);
+                    const isLineDropdown = (control.label && control.label.includes('线路')) || featKey === 'selectLine';
+                    const isIconDropdown = (control.label && control.label.includes('图标')) || featKey === 'selectIcon';
+
+                    let componentConfig = compositeComponents.find(c => classes.includes(c.id));
+                    if (!componentConfig && isIconDropdown) {
+                        componentConfig = basicComponents.find(c => c.id === 'icon');
+                    }
+                    const useList = componentConfig && componentConfig.useList === true;
+
+                    if (useList) {
+                        input = document.createElement('div');
+                        input.className = 'optionListGrid';
+
+                        if (isLineDropdown) {
+                            presetLinesConfig.forEach(line => {
+                                const btn = document.createElement('button');
+                                btn.className = 'optionBtn';
+                                btn.textContent = `${line.number}${line.nameCN}`;
+
+                                const colorBar = element.querySelector('.colorBar');
+                                if (colorBar && rgb2hex(colorBar.style.backgroundColor) === rgb2hex(line.color)) {
+                                    btn.classList.add('active');
+                                }
+
+                                btn.addEventListener('click', () => {
+                                    input.querySelectorAll('.optionBtn').forEach(b => b.classList.remove('active'));
+                                    btn.classList.add('active');
+
+                                    const isLineColorText = element.classList.contains('lineColorText') || element.closest('.lineColorText') || (element.classList.contains('zone') && element.querySelector('.lineColorText'));
+
+                                    if (colorBar) colorBar.style.backgroundColor = line.color;
+
+                                    if (!isLineColorText) {
+                                        const largeText = element.querySelector('.largeText');
+                                        if (largeText) largeText.textContent = line.number;
+
+                                        const textCN = element.querySelector('.textCN');
+                                        if (textCN) textCN.textContent = line.nameCN;
+
+                                        const textEN = element.querySelector('.textEN');
+                                        if (textEN) textEN.textContent = line.nameEN;
+                                    }
+
+                                    const parentZone = element.closest('.zone.lineColor') || (element.classList.contains('lineColor') ? element : null);
+                                    if (parentZone) {
+                                        parentZone.style.setProperty('--current-line-bg', line.color);
+                                    }
+                                });
+                                input.appendChild(btn);
+                            });
+                        } else if (isIconDropdown) {
+                            let iconFiles = [];
+                            let iconNames = [];
+                            if (componentConfig && componentConfig.iconFiles) {
+                                iconFiles = componentConfig.iconFiles;
+                                iconNames = componentConfig.iconNames || [];
+                            }
+
+                            const targetImg = targetEl || element.querySelector('img');
+                            const currentSrc = targetImg ? (targetImg.getAttribute('src') || targetImg.src || '') : '';
+
+                            iconFiles.forEach((filePath, idx) => {
+                                const btn = document.createElement('button');
+                                btn.className = 'optionBtn';
+
+                                let resolvedPath = filePath;
+                                if (currentAddonId !== 'default' && !filePath.startsWith('http') && !filePath.startsWith('data:') && !filePath.startsWith('./addons/')) {
+                                    if (filePath.startsWith('icon/')) {
+                                        resolvedPath = `./addons/${currentAddonId}/${filePath}`;
+                                    }
+                                }
+                                const baseName = resolvedPath.substring(resolvedPath.lastIndexOf('/') + 1).replace('.svg', '');
+                                const displayName = iconNames[idx] || baseName;
+                                btn.textContent = displayName;
+
+                                const normCurrent = currentSrc.replace(/^\.\//, '').replace(/\\/g, '/');
+                                const normFile = resolvedPath.replace(/^\.\//, '').replace(/\\/g, '/');
+                                if (normCurrent && (normCurrent === normFile || normCurrent.endsWith('/' + normFile) || normFile.endsWith('/' + normCurrent))) {
+                                    btn.classList.add('active');
+                                }
+
+                                btn.addEventListener('click', () => {
+                                    input.querySelectorAll('.optionBtn').forEach(b => b.classList.remove('active'));
+                                    btn.classList.add('active');
+
+                                    if (targetImg) {
+                                        targetImg.src = resolvedPath;
+                                    }
+                                });
+                                input.appendChild(btn);
+                            });
+                        }
+                    } else {
+                        input = document.createElement('select');
+
+                        if (isLineDropdown) {
+                            const defaultOption = document.createElement('option');
+                            defaultOption.value = '';
+                            defaultOption.textContent = '选择线路...';
+                            input.appendChild(defaultOption);
+
+                            presetLinesConfig.forEach(line => {
+                                const option = document.createElement('option');
+                                option.value = JSON.stringify(line);
+                                option.textContent = `${line.number}${line.nameCN}`;
+                                input.appendChild(option);
+                            });
+
+                            input.addEventListener('change', (e) => {
+                                if (!e.target.value) return;
+                                const line = JSON.parse(e.target.value);
+
+                                const isLineColorText = element.classList.contains('lineColorText') || element.closest('.lineColorText') || (element.classList.contains('zone') && element.querySelector('.lineColorText'));
+
+                                const colorBar = element.querySelector('.colorBar');
+                                if (colorBar) colorBar.style.backgroundColor = line.color;
+
+                                if (!isLineColorText) {
+                                    const largeText = element.querySelector('.largeText');
+                                    if (largeText) largeText.textContent = line.number;
+
+                                    const textCN = element.querySelector('.textCN');
+                                    if (textCN) textCN.textContent = line.nameCN;
+
+                                    const textEN = element.querySelector('.textEN');
+                                    if (textEN) textEN.textContent = line.nameEN;
+                                }
+
+                                const parentZone = element.closest('.zone.lineColor') || (element.classList.contains('lineColor') ? element : null);
+                                if (parentZone) {
+                                    parentZone.style.setProperty('--current-line-bg', line.color);
+                                }
+                            });
+                        } else if (isIconDropdown) {
+                            const defaultOption = document.createElement('option');
+                            defaultOption.value = '';
+                            defaultOption.textContent = '选择图标...';
+                            input.appendChild(defaultOption);
+
+                            let iconFiles = [];
+                            let iconNames = [];
+                            if (componentConfig && componentConfig.iconFiles) {
+                                iconFiles = componentConfig.iconFiles;
+                                iconNames = componentConfig.iconNames || [];
+                            }
+
+                            const targetImg = targetEl || element.querySelector('img');
+                            const currentSrc = targetImg ? (targetImg.getAttribute('src') || targetImg.src || '') : '';
+
+                            let matched = false;
+                            iconFiles.forEach((filePath, idx) => {
+                                const option = document.createElement('option');
+                                let resolvedPath = filePath;
+                                if (currentAddonId !== 'default' && !filePath.startsWith('http') && !filePath.startsWith('data:') && !filePath.startsWith('./addons/')) {
+                                    if (filePath.startsWith('icon/')) {
+                                        resolvedPath = `./addons/${currentAddonId}/${filePath}`;
+                                    }
+                                }
+                                option.value = resolvedPath;
+                                const baseName = resolvedPath.substring(resolvedPath.lastIndexOf('/') + 1).replace('.svg', '');
+                                const displayName = iconNames[idx] || baseName;
+                                option.textContent = displayName;
+
+                                const normCurrent = currentSrc.replace(/^\.\//, '').replace(/\\/g, '/');
+                                const normFile = resolvedPath.replace(/^\.\//, '').replace(/\\/g, '/');
+                                if (normCurrent && (normCurrent === normFile || normCurrent.endsWith('/' + normFile) || normFile.endsWith('/' + normCurrent))) {
+                                    option.selected = true;
+                                    matched = true;
+                                }
+                                input.appendChild(option);
+                            });
+
+                            if (!matched) {
+                                defaultOption.selected = true;
+                            }
+
+                            input.addEventListener('change', (e) => {
+                                if (!e.target.value) return;
+                                const fullPath = e.target.value;
+                                if (targetImg) {
+                                    targetImg.src = fullPath;
+                                }
+                            });
+                        }
+                    }
+                }
+
+                if (input) row.appendChild(input);
+                group.appendChild(row);
+            });
+            container.appendChild(group);
+        });
+    }
+
+    // Effect toggles
+    function toggleEffect(type, forceState) {
+        if (type === 'lighting') {
+            const btn = document.getElementById('btnEffectLight');
+            const overlay = document.getElementById('lightingOverlay');
+            if (!btn || !overlay) return;
+            const active = forceState !== undefined ? forceState : !btn.classList.contains('active');
+            btn.classList.toggle('active', active);
+            overlay.classList.toggle('active', active);
+        }
+        else if (type === 'hanger') {
+            const btn = document.getElementById('btnEffectHanger');
+            const hangers = document.querySelectorAll('.hanger');
+            if (!btn) return;
+            const active = forceState !== undefined ? forceState : !btn.classList.contains('active');
+            btn.classList.toggle('active', active);
+            hangers.forEach(h => h.classList.toggle('active', active));
+        }
+        else if (type === 'fade') {
+            const btn = document.getElementById('btnEffectFade');
+            const overlays = document.querySelectorAll('.hanger .fade-overlay');
+            if (!btn) return;
+            const active = forceState !== undefined ? forceState : !btn.classList.contains('active');
+            btn.classList.toggle('active', active);
+            overlays.forEach(o => o.classList.toggle('active', active));
+        }
+    }
+
+    // Config loading & Style pack switching
+    async function loadConfigAndInitialize() {
+        try {
+            const addonsData = await loadJSON('./addons/addons.json');
+
+            // Bind change listeners to settings dropdowns once
+            const canvasSizeSelect = document.getElementById('canvasSizeSelect');
+            if (canvasSizeSelect) {
+                canvasSizeSelect.addEventListener('change', handleCanvasSizeChange);
+            }
+            const signStyleSelect = document.getElementById('signStyleSelect');
+            if (signStyleSelect) {
+                signStyleSelect.addEventListener('change', handleSignStyleChange);
+            }
+
+            // Fetch addon details
+            addonsList = [];
+            const addonPromises = addonsData.map(async (addonId) => {
+                try {
+                    const meta = await loadJSON(`./addons/${addonId}/addon.json`);
+                    addonsList.push(meta);
+                } catch (e) {
+                    console.error(`Failed to load addon metadata for ${addonId}:`, e);
+                }
+            });
+            await Promise.all(addonPromises);
+
+            // Populate project styles
+            const projectStyleSelect = document.getElementById('projectStyleSelect');
+            if (projectStyleSelect) {
+                projectStyleSelect.innerHTML = '';
+                const defaultOpt = document.createElement('option');
+                defaultOpt.value = 'default';
+                defaultOpt.textContent = 'CRT - GK标准';
+                projectStyleSelect.appendChild(defaultOpt);
+
+                addonsList.forEach(addon => {
+                    const o = document.createElement('option');
+                    o.value = addon.id;
+                    o.textContent = addon.name;
+                    projectStyleSelect.appendChild(o);
+                });
+                projectStyleSelect.addEventListener('change', handleProjectStyleChange);
+            }
+
+            // Apply default style pack
+            await loadStylePack('default');
+
+        } catch (error) {
+            console.error('Failed to initialize configurations:', error);
+        }
+    }
+
+    async function loadStylePack(addonId) {
+        currentAddonId = addonId;
+
+        let basicPath = './components/basic.json';
+        let defaultPath = './components/default.json';
+        let featuresPath = './components/features.json';
+        let signsPath = './components/signs.json';
+
+        if (addonId !== 'default') {
+            basicPath = `./addons/${addonId}/basic.json`;
+            defaultPath = `./addons/${addonId}/default.json`;
+            featuresPath = `./addons/${addonId}/features.json`;
+            signsPath = `./addons/${addonId}/signs.json`;
+        }
+
+        try {
+            const [basicComponentsData, defaultData, featuresData, signsData] = await Promise.all([
+                loadJSON(basicPath),
+                loadJSON(defaultPath),
+                loadJSON(featuresPath),
+                loadJSON(signsPath).catch(err => {
+                    console.warn(`Failed to load signs.json from ${signsPath}, falling back to default.`);
+                    return loadJSON('./components/signs.json');
+                })
+            ]);
+
+            basicComponents = basicComponentsData;
+            featureConfig = featuresData;
+            presetLinesConfig = defaultData.lines || [];
+            compositeComponents = defaultData.components || [];
+            signsConfig = signsData;
+
+            // Populate canvas sizes dropdown based on the newly loaded signsConfig
+            const canvasSizeSelect = document.getElementById('canvasSizeSelect');
+            if (canvasSizeSelect) {
+                const currentVal = canvasSizeSelect.value;
+                canvasSizeSelect.innerHTML = '';
+                signsConfig.canvasWidths.forEach(opt => {
+                    const o = document.createElement('option');
+                    o.value = opt.value;
+                    o.textContent = opt.name;
+                    canvasSizeSelect.appendChild(o);
+                });
+                // Try to restore previous value, or fall back to first option
+                if (Array.from(canvasSizeSelect.options).some(o => o.value === currentVal)) {
+                    canvasSizeSelect.value = currentVal;
+                } else {
+                    canvasSizeSelect.value = signsConfig.canvasWidths[0]?.value || 'auto';
+                }
+            }
+
+            // Populate sign styles dropdown
+            const signStyleSelect = document.getElementById('signStyleSelect');
+            if (signStyleSelect) {
+                const currentVal = signStyleSelect.value;
+                signStyleSelect.innerHTML = '';
+                signsConfig.signStyles.forEach(opt => {
+                    const o = document.createElement('option');
+                    o.value = opt.id;
+                    o.textContent = opt.name;
+                    signStyleSelect.appendChild(o);
+                });
+                // Try to restore previous value, or fall back to first option
+                if (Array.from(signStyleSelect.options).some(o => o.value === currentVal)) {
+                    signStyleSelect.value = currentVal;
+                } else {
+                    const defaultStyleId = signsConfig.signStyles[0]?.id || '';
+                    signStyleSelect.value = defaultStyleId;
+                    if (defaultStyleId) {
+                        handleSignStyleChange({ target: { value: defaultStyleId } });
+                    }
+                }
+            }
+
+            // Update stylesheet link
+            let link = document.getElementById('addon-style-link');
+            if (addonId === 'default') {
+                if (link) link.remove();
+            } else {
+                const addonMeta = addonsList.find(a => a.id === addonId);
+                const cssFile = (addonMeta && addonMeta.css) || 'global.css';
+                const cssPath = `./addons/${addonId}/${cssFile}`;
+
+                if (!link) {
+                    link = document.createElement('link');
+                    link.id = 'addon-style-link';
+                    link.rel = 'stylesheet';
+                    document.head.appendChild(link);
+                }
+                link.href = cssPath;
+            }
+
+            // Render category & components list
+            const canvas = document.getElementById('canvas');
+            const composites = defaultData.components || [];
+            categoriesConfig = defaultData.categories || [];
+
+            currentCategoryId = categoriesConfig.find((cat) => cat.id === 'enter')?.id || categoriesConfig[0]?.id || '';
+            isCategoryButtonsRendered = false;
+
+            const updateUI = () => {
+                renderCategoryButtons(categoriesConfig, currentCategoryId, (categoryId) => {
+                    currentCategoryId = categoryId;
+                    updateUI();
+                });
+                renderComponentsList(currentCategoryId, composites, basicComponents, categoriesConfig, canvas);
+            };
+
+            updateUI();
+
+            // Clear property panel
+            selectElement(null);
+            const container = document.getElementById('featureControls');
+            if (container) {
+                container.innerHTML = '<span style="color: #5b5b5b;text-align: center;">未选中组件</span>';
+            }
+            const panelTitle = document.getElementById('propertyPanelTitle');
+            if (panelTitle) {
+                panelTitle.textContent = '属性面板';
+            }
+
+        } catch (error) {
+            console.error(`Failed to load style pack: ${addonId}`, error);
+            alert(`加载风格包 ${addonId} 失败: ` + error.message);
+        }
+    }
+
+    function handleCanvasSizeChange(e) {
+        const val = e.target.value;
+        const canvas = document.getElementById('canvas');
+        if (!canvas) return;
+
+        if (val === 'auto') {
+            canvas.style.width = 'auto';
+            canvas.querySelectorAll('.zone').forEach(z => {
+                z.style.flex = 'none';
+            });
+        } else {
+            canvas.style.width = `${val}px`;
+        }
+
+        if (selectedElement && selectedElement.classList.contains('zone')) {
+            openPropertyPanel(selectedElement);
+        }
+    }
+
+    function handleSignStyleChange(e) {
+        const styleId = e.target.value;
+        const style = signsConfig.signStyles.find(s => s.id === styleId);
+        if (!style) return;
+
+        const canvas = document.getElementById('canvas');
+        if (!canvas) return;
+
+        // Set standard borders but make them transparent so they preserve the layout box sizing
+        canvas.style.borderWidth = style.borderWidth || '0';
+        canvas.style.borderStyle = style.borderStyle || 'none';
+        canvas.style.borderColor = 'transparent';
+
+        // Apply border styles using CSS variables so canvas::after pseudo-element can render it
+        canvas.style.setProperty('--canvas-border-width', style.borderWidth || '0');
+        canvas.style.setProperty('--canvas-border-style', style.borderStyle || 'none');
+        canvas.style.setProperty('--canvas-border-color', style.borderColor || 'transparent');
+
+        // Extract individual border widths to position canvas::after correctly outside the padding box
+        const parts = (style.borderWidth || '0').trim().split(/\s+/);
+        let top = '0', right = '0', bottom = '0', left = '0';
+        if (parts.length === 1) {
+            top = right = bottom = left = parts[0];
+        } else if (parts.length === 2) {
+            top = bottom = parts[0];
+            right = left = parts[1];
+        } else if (parts.length === 3) {
+            top = parts[0];
+            right = left = parts[1];
+            bottom = parts[2];
+        } else if (parts.length >= 4) {
+            top = parts[0];
+            right = parts[1];
+            bottom = parts[2];
+            left = parts[3];
+        }
+
+        canvas.style.setProperty('--canvas-border-width-top', top);
+        canvas.style.setProperty('--canvas-border-width-right', right);
+        canvas.style.setProperty('--canvas-border-width-bottom', bottom);
+        canvas.style.setProperty('--canvas-border-width-left', left);
+
+        if (style.hanger) {
+            canvas.style.setProperty('--hanger-width', `${style.hanger.width}px`);
+            canvas.style.setProperty('--hanger-height', `${style.hanger.height}px`);
+            canvas.style.setProperty('--hanger-bg', style.hanger.background);
+        }
+
+        if (style.hasMask) {
+            canvas.classList.add('has-mask');
+        } else {
+            canvas.classList.remove('has-mask');
+        }
+    }
+
+    async function handleProjectStyleChange(e) {
+        await loadStylePack(e.target.value);
+    }
+
+    // Canvas serialization for JSON Save & Import
+    function serializeCanvas() {
+        const canvas = document.getElementById('canvas');
+        const data = {
+            projectName: document.getElementById('projectTitle').textContent.trim(),
+            addonId: currentAddonId,
+            canvasWidth: canvas.style.width || 'auto',
+            signStyleId: document.getElementById('signStyleSelect')?.value || '',
+            effects: {
+                lighting: document.getElementById('btnEffectLight').classList.contains('active'),
+                hanger: document.getElementById('btnEffectHanger').classList.contains('active'),
+                fade: document.getElementById('btnEffectFade').classList.contains('active')
+            },
+            zones: []
+        };
+
+        const zones = canvas.querySelectorAll('.zone');
+        zones.forEach(zone => {
+            const zoneData = {
+                category: zone.dataset.category || '',
+                className: zone.className,
+                style: zone.style.cssText,
+                components: []
+            };
+
+            Array.from(zone.children).forEach(child => {
+                if (child.classList.contains('insert-line')) return;
+
+                const compData = {
+                    id: child.id,
+                    className: child.className,
+                    dataset: { ...child.dataset },
+                    style: child.style.cssText,
+                    innerHTML: child.innerHTML
+                };
+                zoneData.components.push(compData);
+            });
+
+            data.zones.push(zoneData);
+        });
+
+        return data;
+    }
+
+    async function deserializeCanvas(data) {
+        document.getElementById('projectTitle').textContent = data.projectName || '未命名标牌';
+
+        // Re-load Style pack
+        if (data.addonId) {
+            const projectStyleSelect = document.getElementById('projectStyleSelect');
+            if (projectStyleSelect) {
+                projectStyleSelect.value = data.addonId;
+            }
+            await loadStylePack(data.addonId);
+        }
+
+        const canvas = document.getElementById('canvas');
+        if (data.canvasWidth) {
+            canvas.style.width = data.canvasWidth;
+            const canvasSizeSelect = document.getElementById('canvasSizeSelect');
+            if (canvasSizeSelect) {
+                if (data.canvasWidth === 'auto') {
+                    canvasSizeSelect.value = 'auto';
+                } else {
+                    canvasSizeSelect.value = data.canvasWidth.replace('px', '');
+                }
+            }
+        }
+
+        if (data.signStyleId) {
+            const signStyleSelect = document.getElementById('signStyleSelect');
+            if (signStyleSelect) {
+                signStyleSelect.value = data.signStyleId;
+            }
+            handleSignStyleChange({ target: { value: data.signStyleId } });
+        }
+
+        if (data.effects) {
+            toggleEffect('lighting', data.effects.lighting);
+            toggleEffect('hanger', data.effects.hanger);
+            toggleEffect('fade', data.effects.fade);
+        }
+
+        // Remove existing zones
+        canvas.querySelectorAll('.zone').forEach(z => z.remove());
+
+        // Rebuild zones
+        data.zones.forEach(zoneData => {
+            const zone = document.createElement('div');
+            zone.className = zoneData.className;
+            zone.dataset.category = zoneData.category;
+
+            if (zone.classList.contains('lineColor')) {
+                zone.dataset.feature = 'selectLine zoneWidth zoneTextWidth zoneAlign';
+            } else {
+                zone.dataset.feature = 'zoneWidth zoneTextWidth zoneAlign';
+            }
+
+            if (zoneData.style) {
+                zone.style.cssText = zoneData.style;
+            }
+
+            zone.addEventListener('click', (e) => {
+                if (e.target === zone) {
+                    e.stopPropagation();
+                    openPropertyPanel(zone);
+                }
+            });
+
+            zoneData.components.forEach(compData => {
+                const isImg = compData.className.includes('icon') && !compData.className.includes('composite');
+                const el = document.createElement(isImg ? 'img' : 'div');
+                el.id = compData.id;
+                el.className = compData.className;
+                if (compData.style) {
+                    el.style.cssText = compData.style;
+                }
+                el.innerHTML = compData.innerHTML;
+
+                if (compData.dataset) {
+                    Object.entries(compData.dataset).forEach(([k, v]) => {
+                        el.dataset[k] = v;
+                    });
+                }
+
+                if (el.dataset.feature) {
+                    el.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openPropertyPanel(el);
+                    });
+                }
+
+                zone.appendChild(el);
+            });
+
+            canvas.appendChild(zone);
+        });
+
+        selectElement(null);
+    }
+
+    function saveCanvasToFile() {
+        const data = serializeCanvas();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${data.projectName}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // Inlining images & background images to base64 for standalone SVG & PNG exports
+    async function convertImagesToBase64(clone) {
+        const imgs = clone.querySelectorAll('img');
+        const imgPromises = Array.from(imgs).map(async (img) => {
+            const src = img.getAttribute('src') || img.src;
+            if (!src || src.startsWith('data:')) return;
+            try {
+                const res = await fetch(src);
+                const blob = await res.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        img.src = reader.result;
+                        resolve();
+                    };
+                    reader.readAsDataURL(blob);
+                });
+            } catch (e) {
+                console.error('Failed to convert image to base64:', src, e);
+            }
+        });
+        await Promise.all(imgPromises);
+
+        // Convert lighting overlay background image to base64
+        const lightingOverlay = clone.querySelector('#lightingOverlay');
+        if (lightingOverlay && lightingOverlay.classList.contains('active')) {
+            try {
+                const res = await fetch('icon/lighting.png');
+                const blob = await res.blob();
+                await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        lightingOverlay.style.backgroundImage = `url(${reader.result})`;
+                        resolve();
+                    };
+                    reader.readAsDataURL(blob);
+                });
+            } catch (e) {
+                console.error('Failed to convert lighting overlay background to base64:', e);
+            }
+        }
+    }
+
+    function ensureHtml2Canvas() {
+        if (window.html2canvas) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    // 核心 PNG 导出逻辑，removeBorder 控制是否去除边框
+    async function _exportPNGCore(removeBorder) {
+        const canvasEl = document.getElementById('canvas');
+        if (!canvasEl) return;
+
+        try {
+            await ensureHtml2Canvas();
+
+            // 临时重置缩放以确保 html2canvas 能够以 1:1 分辨率完美捕捉样式
+            const originalZoom = canvasEl.style.zoom || '1';
+            canvasEl.style.zoom = '1';
+
+            // 保存并临时移除边框（如果导出无边框版本）
+            const originalBorderWidth = canvasEl.style.borderWidth;
+            const originalBorderStyle = canvasEl.style.borderStyle;
+            const originalBorderColor = canvasEl.style.borderColor;
+            const originalVarBorderWidth = canvasEl.style.getPropertyValue('--canvas-border-width');
+            const originalVarBorderStyle = canvasEl.style.getPropertyValue('--canvas-border-style');
+            if (removeBorder) {
+                canvasEl.style.borderWidth = '0';
+                canvasEl.style.borderStyle = 'none';
+                canvasEl.style.setProperty('--canvas-border-width', '0');
+                canvasEl.style.setProperty('--canvas-border-style', 'none');
+            }
+
+            // 检测光照是否激活
+            const lightingOverlay = canvasEl.querySelector('#lightingOverlay');
+            const hasLighting = lightingOverlay && lightingOverlay.classList.contains('active');
+
+            // 导出时先隐藏光照层（html2canvas 不支持 mix-blend-mode）
+            if (hasLighting) {
+                lightingOverlay.classList.remove('active');
+                lightingOverlay.style.display = 'none';
+            }
+
+            const scale = 10;
+
+            // 执行截屏转换（不含光照层）
+            const captureWidth = canvasEl.offsetWidth;
+            const captureHeight = canvasEl.offsetHeight;
+            const renderedCanvas = await html2canvas(canvasEl, {
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null,
+                scale: scale,
+                width: captureWidth,
+                height: captureHeight,
+                scrollX: 0,
+                scrollY: 0
+            });
+
+            // 如果有光照效果，手动用 Canvas 2D API 合成 overlay 混合模式
+            let finalCanvas = renderedCanvas;
+            if (hasLighting) {
+                // 恢复光照层显示状态
+                lightingOverlay.style.display = '';
+                lightingOverlay.classList.add('active');
+
+                try {
+                    // 用 fetch + blob 加载光照图片（避免 crossOrigin CORS 问题）
+                    const res = await fetch('icon/lighting.png');
+                    const blob = await res.blob();
+                    const bitmapUrl = URL.createObjectURL(blob);
+                    const lightingImg = await new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.onload = () => resolve(img);
+                        img.onerror = reject;
+                        img.src = bitmapUrl;
+                    });
+
+                    // 创建全新的离屏画布进行合成（避免在 html2canvas 结果上直接操作的兼容问题）
+                    finalCanvas = document.createElement('canvas');
+                    finalCanvas.width = renderedCanvas.width;
+                    finalCanvas.height = renderedCanvas.height;
+                    const ctx = finalCanvas.getContext('2d');
+
+                    // 先绘制原始渲染结果
+                    ctx.drawImage(renderedCanvas, 0, 0);
+
+                    // 用 overlay 混合模式绘制光照层
+                    ctx.globalCompositeOperation = 'overlay';
+
+                    // 光照层在 CSS 中覆盖的是 content area（position:absolute 相对于 padding box）
+                    if (removeBorder) {
+                        ctx.drawImage(lightingImg, 0, 0, finalCanvas.width, finalCanvas.height);
+                    } else {
+                        // 有边框模式：光照仅覆盖内容区域
+                        const cs = getComputedStyle(canvasEl);
+                        const borderLeft = parseFloat(cs.borderLeftWidth) || 0;
+                        const borderTop = parseFloat(cs.borderTopWidth) || 0;
+                        const contentW = canvasEl.clientWidth;
+                        const contentH = canvasEl.clientHeight;
+                        ctx.drawImage(lightingImg,
+                            borderLeft * scale, borderTop * scale,
+                            contentW * scale, contentH * scale);
+                    }
+                    ctx.globalCompositeOperation = 'source-over';
+
+                    URL.revokeObjectURL(bitmapUrl);
+                } catch (lightErr) {
+                    console.warn('光照合成失败，将导出无光照版本:', lightErr);
+                    finalCanvas = renderedCanvas;
+                }
+            }
+
+            // 还原网页上的缩放和边框状态
+            canvasEl.style.zoom = originalZoom;
+            if (removeBorder) {
+                canvasEl.style.borderWidth = originalBorderWidth;
+                canvasEl.style.borderStyle = originalBorderStyle;
+                canvasEl.style.borderColor = originalBorderColor;
+                canvasEl.style.setProperty('--canvas-border-width', originalVarBorderWidth);
+                canvasEl.style.setProperty('--canvas-border-style', originalVarBorderStyle);
+            }
+
+            // 触发下载
+            const suffix = removeBorder ? '_无边框' : '';
+            const pngUrl = finalCanvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = pngUrl;
+            a.download = `${document.getElementById('projectTitle').textContent.trim()}${suffix}.png`;
+            a.click();
+        } catch (e) {
+            console.error('PNG 导出失败:', e);
+            alert('PNG 导出失败，请检查控制台错误信息。');
+
+            // 确保异常时也恢复状态
+            const canvasEl2 = document.getElementById('canvas');
+            if (canvasEl2) canvasEl2.style.zoom = canvasEl2.style.zoom || '1';
+            const lo = document.getElementById('lightingOverlay');
+            if (lo) { lo.style.display = ''; }
+        }
+    }
+
+    async function exportToPNG() {
+        return _exportPNGCore(false);
+    }
+
+    async function exportToPNGNoBorder() {
+        return _exportPNGCore(true);
+    }
+
+    async function exportToSVG() {
+        const canvas = document.getElementById('canvas');
+        if (!canvas) return;
+
+        // 1. 临时重置缩放，确保 getComputedStyle 获取到的是 1:1 的真实物理像素尺寸
+        const originalZoom = canvas.style.zoom || '1';
+        canvas.style.zoom = '1';
+
+        // 2. 深度克隆一份画布 DOM
+        const clone = canvas.cloneNode(true);
+
+        // 移除拖拽时产生的临时辅助线
+        const insertLine = clone.querySelector('.insert-line');
+        if (insertLine) insertLine.remove();
+
+        // 模拟 canvas::after 伪元素的边框并塞入 SVG 导出中
+        const afterStyle = window.getComputedStyle(canvas, '::after');
+        if (afterStyle && afterStyle.borderStyle !== 'none' && afterStyle.borderWidth !== '0px') {
+            const afterMock = document.createElement('div');
+            afterMock.className = 'canvas-after-mock';
+            
+            // 获取 computed 属性值
+            const bw = afterStyle.getPropertyValue('border-width') || '6px 6px 10px 6px';
+            const bs = afterStyle.getPropertyValue('border-style') || 'solid';
+            const bc = afterStyle.getPropertyValue('border-color') || '#151515';
+            const br = afterStyle.getPropertyValue('border-radius') || 'inherit';
+            const topVal = afterStyle.getPropertyValue('top') || '0px';
+            const leftVal = afterStyle.getPropertyValue('left') || '0px';
+            const rightVal = afterStyle.getPropertyValue('right') || '0px';
+            const bottomVal = afterStyle.getPropertyValue('bottom') || '0px';
+
+            const afterMockStyle = `
+                position: absolute;
+                top: ${topVal}; left: ${leftVal}; right: ${rightVal}; bottom: ${bottomVal};
+                border-width: ${bw};
+                border-style: ${bs};
+                border-color: ${bc};
+                border-radius: ${br};
+                pointer-events: none;
+                z-index: 10;
+                box-sizing: border-box;
+            `.trim().replace(/\n\s*/g, ' ');
+
+            afterMock.setAttribute('style', afterMockStyle);
+            clone.appendChild(afterMock);
+        }
+
+        // 3. 定义样式内联函数：将 CSS 文件的样式强行固定到 HTML 标签上
+        function inlineAllStyles(sourceEl, targetEl) {
+            const computedStyle = window.getComputedStyle(sourceEl);
+            let styleString = '';
+
+            // 提取关键的矢量渲染样式
+            const propertiesToCopy = [
+                'position', 'display', 'flex-direction', 'justify-content', 'align-items',
+                'flex', 'flex-grow', 'flex-shrink', 'flex-basis',
+                'width', 'height', 'margin', 'padding', 'box-sizing',
+                'background-color', 'color', 'font-family', 'font-size', 'font-weight', 'text-align', 'line-height',
+                'border', 'border-radius', 'border-width', 'border-style', 'border-color',
+                'transform', 'opacity', 'visibility', 'overflow', 'gap'
+            ];
+
+            propertiesToCopy.forEach(prop => {
+                const value = computedStyle.getPropertyValue(prop);
+                if (value) {
+                    styleString += `${prop}: ${value}; `;
+                }
+            });
+
+            // 将抓取到的全量样式写入克隆体
+            targetEl.setAttribute('style', styleString);
+
+            // 递归处理所有子节点
+            const sourceChildren = sourceEl.children;
+            const targetChildren = targetEl.children;
+            for (let i = 0; i < sourceChildren.length; i++) {
+                inlineAllStyles(sourceChildren[i], targetChildren[i]);
+            }
+        }
+
+        // 4. 执行全量样式固化
+        inlineAllStyles(canvas, clone);
+
+        // 5. 将图片（如小图标）同步转换为 Base64 矢量/位图内嵌（防止沙箱拦截路径）
+        await convertImagesToBase64(clone);
+
+        // 恢复网页上的缩放
+        canvas.style.zoom = originalZoom;
+
+        // 6. 获取标牌的最终精确绝对宽高
+        const width = canvas.offsetWidth;
+        const height = canvas.offsetHeight;
+
+        // 7. 组装纯矢量结构的 SVG
+        // 关键点：不再依赖外部外部 CSS，所有的样式全部都在标签的 style 属性里
+        const svgString = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+        <foreignObject width="100%" height="100%">
+            <div xmlns="http://www.w3.org/1999/xhtml" style="margin: 0; padding: 0; width: 100%; height: 100%;">
+                ${clone.outerHTML}
+            </div>
+        </foreignObject>
+    </svg>
+            `.trim();
+
+        // 8. 触发下载
+        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${document.getElementById('projectTitle').textContent.trim()}.svg`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // Set up canvas mouse events (dragging scroll state & drops)
+    document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('canvas');
+        if (!canvas) return;
+
+        canvas.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const payload = getPayloadFromEvent(e);
+            if (!payload) { hideInsertLine(); return; }
+            updateInsertIndicator(payload, e, compositeComponents, basicComponents, canvas);
+        });
+
+        canvas.addEventListener('drop', (e) => {
+            e.preventDefault(); hideInsertLine();
+            const payload = getPayloadFromEvent(e);
+            if (!payload) return;
+            handleDrop(payload, e, compositeComponents, basicComponents, canvas);
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (e.target === canvas) {
+                selectElement(null);
+                const container = document.getElementById('featureControls');
+                if (container) {
+                    container.innerHTML = '<span style="color: #5b5b5b;text-align: center;">未选中组件</span>';
+                }
+                const panelTitle = document.getElementById('propertyPanelTitle');
+                if (panelTitle) {
+                    panelTitle.textContent = '属性面板';
+                }
+            }
+        });
+    });
+
+    // 视口平移画布控制
+    document.addEventListener('DOMContentLoaded', () => {
+        const viewer = document.querySelector('.canvasViewer');
+        if (!viewer) return;
+        let isDown = false; let startX; let scrollLeft;
+
+        viewer.addEventListener('mousedown', (e) => {
+            if (e.target.closest('[draggable="true"]')) return;
+            isDown = true;
+            viewer.classList.add('dragging');
+            startX = e.pageX - viewer.offsetLeft;
+            scrollLeft = viewer.scrollLeft;
+        });
+        viewer.addEventListener('mouseleave', () => {
+            isDown = false;
+            viewer.classList.remove('dragging');
+        });
+        viewer.addEventListener('mouseup', () => {
+            isDown = false;
+            viewer.classList.remove('dragging');
+        });
+        viewer.addEventListener('mousemove', (e) => {
+            if (!isDown) return; e.preventDefault();
+            const x = e.pageX - viewer.offsetLeft;
+            viewer.scrollLeft = scrollLeft - (x - startX) * 1.5;
+        });
+    });
+
+    // 绑定快捷操作和缩放控制事件监听器
+    document.addEventListener('DOMContentLoaded', () => {
+        const btnDuplicate = document.getElementById('btnDuplicate');
+        const btnDelete = document.getElementById('btnDelete');
+        if (btnDuplicate) btnDuplicate.addEventListener('click', duplicateSelectedElement);
+        if (btnDelete) btnDelete.addEventListener('click', deleteSelectedElement);
+
+        const btnZoomOut = document.getElementById('btnZoomOut');
+        const btnZoomIn = document.getElementById('btnZoomIn');
+        if (btnZoomOut && btnZoomIn) {
+            btnZoomOut.addEventListener('click', () => {
+                zoomLevel = Math.max(MIN_ZOOM, zoomLevel - ZOOM_STEP);
+                updateZoom();
+            });
+            btnZoomIn.addEventListener('click', () => {
+                zoomLevel = Math.min(MAX_ZOOM, zoomLevel + ZOOM_STEP);
+                updateZoom();
+            });
+        }
+
+        // Export dropdown toggling
+        const btnExport = document.getElementById('btnExport');
+        const exportDropdown = document.getElementById('exportDropdown');
+        if (btnExport && exportDropdown) {
+            btnExport.addEventListener('click', (e) => {
+                e.stopPropagation();
+                exportDropdown.classList.toggle('show');
+            });
+            document.addEventListener('click', () => {
+                exportDropdown.classList.remove('show');
+            });
+        }
+
+        const btnExportPNG = document.getElementById('btnExportPNG');
+        const btnExportPNGNoBorder = document.getElementById('btnExportPNGNoBorder');
+        const btnExportSVG = document.getElementById('btnExportSVG');
+        if (btnExportPNG) btnExportPNG.addEventListener('click', exportToPNG);
+        if (btnExportPNGNoBorder) btnExportPNGNoBorder.addEventListener('click', exportToPNGNoBorder);
+        if (btnExportSVG) btnExportSVG.addEventListener('click', exportToSVG);
+
+        const btnSave = document.getElementById('btnSave');
+        if (btnSave) btnSave.addEventListener('click', saveCanvasToFile);
+
+        // Import binding
+        const btnImport = document.getElementById('btnImport');
+        const importFile = document.getElementById('importFile');
+        if (btnImport && importFile) {
+            btnImport.addEventListener('click', () => {
+                importFile.click();
+            });
+            importFile.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        deserializeCanvas(data);
+                    } catch (err) {
+                        alert('导入失败，并非有效的标牌 JSON 文件：' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = '';
+            });
+        }
+
+        // Title bindings
+        const projectTitle = document.getElementById('projectTitle');
+        if (projectTitle) {
+            projectTitle.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    projectTitle.blur();
+                }
+            });
+            projectTitle.addEventListener('blur', () => {
+                if (projectTitle.textContent.trim() === '') {
+                    projectTitle.textContent = '未命名标牌';
+                }
+            });
+        }
+
+        // Effects bindings
+        const btnEffectLight = document.getElementById('btnEffectLight');
+        const btnEffectHanger = document.getElementById('btnEffectHanger');
+        const btnEffectFade = document.getElementById('btnEffectFade');
+
+        if (btnEffectLight) btnEffectLight.addEventListener('click', () => toggleEffect('lighting'));
+        if (btnEffectHanger) btnEffectHanger.addEventListener('click', () => toggleEffect('hanger'));
+        if (btnEffectFade) btnEffectFade.addEventListener('click', () => toggleEffect('fade'));
+    });
+
+    // Initialize all configs and default state
+    document.addEventListener('DOMContentLoaded', loadConfigAndInitialize);
+
+    function handleDrop(payload, e, composites, basicComponents, canvas) {
+        const { id } = payload;
+        const category = id === 'lineColorText' ? 'lineColor' : (payload.category || 'default');
+        const zoneClass = id === 'lineColorText' ? 'zone lineColor' : `zone ${category}`;
+        const x = e.clientX; const y = e.clientY;
+        const el = document.elementFromPoint(x, y);
+        const targetZone = el ? el.closest('.zone') : null;
+
+        const newNode = createNodeFromPayload(payload, composites, basicComponents);
+
+        if (targetZone) {
+            const targetCategory = targetZone.dataset.category || '';
+            if (targetCategory === category || (targetCategory === 'lineColor' && category === 'enter')) {
+                let inserted = false; const children = Array.from(targetZone.children);
+                for (let child of children) {
+                    const rect = child.getBoundingClientRect();
+                    if (x < (rect.left + rect.width / 2)) {
+                        targetZone.insertBefore(newNode, child);
+                        inserted = true; break;
+                    }
+                }
+                if (!inserted) targetZone.appendChild(newNode);
+                openPropertyPanel(newNode);
+                return;
+            }
+            
+            // 如果是基础元素添加到非basic的zone，应用目标zone的样式
+            if (payload.kind === 'basic' && targetCategory !== 'basic') {
+                const targetCategoryConfig = categoriesConfig.find(cat => cat.id === targetCategory);
+                if (targetCategoryConfig) {
+                    const styleTags = {
+                        color: targetCategoryConfig.bgColor
+                    };
+                    if (targetCategoryConfig.color) {
+                        styleTags.style = `color: ${targetCategoryConfig.color}`;
+                    }
+                    applyTagsToElement(newNode, styleTags);
+                }
+                // 将新节点添加到目标zone
+                let inserted = false; const children = Array.from(targetZone.children);
+                for (let child of children) {
+                    const rect = child.getBoundingClientRect();
+                    if (x < (rect.left + rect.width / 2)) {
+                        targetZone.insertBefore(newNode, child);
+                        inserted = true; break;
+                    }
+                }
+                if (!inserted) targetZone.appendChild(newNode);
+                openPropertyPanel(newNode);
+                return;
+            }
+        }
+        createZoneElement(category, zoneClass, canvas).appendChild(newNode);
+        openPropertyPanel(newNode);
+    }
+
+    function createNodeFromPayload(payload, composites, basicComponents) {
+        if (payload.kind === 'composite') {
+            return renderCompositeComponent(composites.find((c) => c.id === payload.id), basicComponents);
+        }
+        return renderBasicComponent(basicComponents.find((b) => b.id === payload.id), {}, undefined, false);
+    }
+
+    function showInsertLineAt(canvas, left, top, height) {
+        let line = canvas.querySelector('.insert-line') || document.createElement('div');
+        if (!line.parentNode) canvas.appendChild(line);
+        line.className = 'insert-line';
+        line.style.display = 'block';
+        line.style.left = `${left / zoomLevel}px`;
+        line.style.top = `${top / zoomLevel}px`;
+        line.style.height = `${height}px`;
+    }
+
+    function getPayloadFromEvent(e) {
+        try { return JSON.parse(e.dataTransfer.getData('application/json')); } catch (err) { }
+        return currentDragPayload;
+    }
+
+    function hideInsertLine() {
+        const line = document.querySelector('#canvas .insert-line');
+        if (line) line.style.display = 'none';
+    }
+
+    function updateInsertIndicator(payload, e, composites, basicComponents, canvas) {
+        const x = e.clientX; const canvasRect = canvas.getBoundingClientRect();
+        const el = document.elementFromPoint(x, e.clientY);
+        const targetZone = el ? el.closest('.zone') : null;
+
+        const payloadCategory = payload.id === 'lineColorText' ? 'lineColor' : payload.category;
+
+        if (targetZone && (targetZone.dataset.category === payloadCategory || (targetZone.dataset.category === 'lineColor' && payloadCategory === 'enter'))) {
+            const children = Array.from(targetZone.children);
+            for (let child of children) {
+                const rect = child.getBoundingClientRect();
+                if (x < (rect.left + rect.width / 2)) {
+                    showInsertLineAt(canvas, rect.left - canvasRect.left, targetZone.getBoundingClientRect().top - canvasRect.top, targetZone.clientHeight);
+                    return;
+                }
+            }
+        }
+        hideInsertLine();
+    }
+</script>
+
+</html>

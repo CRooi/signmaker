@@ -1,0 +1,35 @@
+[
+  {
+    "id": "icon",
+    "name": "图标",
+    "description": "",
+    "category": "basic",
+    "feature":"selectIcon rotateIcon",
+    "iconFiles": ["arrow.svg", "default.svg", "monorail.svg", "train.svg"],
+    "html": "<img src='icon/crt/default.svg' alt='ICON' class='icon'>"
+  },
+  {
+    "id": "largeText",
+    "name": "大号文字",
+    "description": "",
+    "category": "basic",
+    "feature":"editText",
+    "html": "<span class='largeText'>0</span>"
+  },
+  {
+    "id": "textBox",
+    "name": "文本框",
+    "description": "",
+    "category": "basic",
+    "feature":"editText",
+    "html": "<div class='textBox'><span class='textCN'>文本</span><span class='textEN'>Text</span></div>"
+  },
+  {
+    "id": "colorBar",
+    "name": "色带",
+    "description": "",
+    "category": "basic",
+    "feature":"editColor",
+    "html": "<div class='colorBar'></div>"
+  }
+]

@@ -1,0 +1,104 @@
+{
+  "editText": {
+    "label": "编辑文本",
+    "controls": [
+      {
+        "type": "text",
+        "target": ".largeText",
+        "label": "数字"
+      },
+      {
+        "type": "text",
+        "target": ".textCN",
+        "label": "中文"
+      },
+      {
+        "type": "text",
+        "target": ".textEN",
+        "label": "英文"
+      }
+    ]
+  },
+  "rotateIcon": {
+    "label": "旋转角度",
+    "controls": [
+      {
+        "type": "select",
+        "target": ".icon",
+        "label": "方向",
+        "options": [
+          {
+            "name": "上 ↑",
+            "value": "rotate(0deg)"
+          },
+          {
+            "name": "下 ↓",
+            "value": "rotate(180deg)"
+          },
+          {
+            "name": "左 ←",
+            "value": "rotate(270deg)"
+          },
+          {
+            "name": "右 →",
+            "value": "rotate(90deg)"
+          },
+          {
+            "name": "左上 ↖",
+            "value": "rotate(315deg)"
+          },
+          {
+            "name": "右上 ↗",
+            "value": "rotate(45deg)"
+          },
+          {
+            "name": "左下 ↙",
+            "value": "rotate(225deg)"
+          },
+          {
+            "name": "右下 ↘",
+            "value": "rotate(135deg)"
+          }
+        ]
+      }
+    ]
+  },
+  "selectLine": {
+    "label": "线路设置",
+    "controls": [
+      {
+        "type": "dropdown",
+        "label": ""
+      },
+      {
+        "type": "color",
+        "target": ".colorBar",
+        "label": "自定义线路色"
+      },
+      {
+        "type": "text",
+        "target": ".largeText",
+        "label": "线路号"
+      }
+    ]
+  },
+  "selectIcon": {
+    "label": "选择图标",
+    "controls": [
+      {
+        "type": "dropdown",
+        "target": "img"
+      }
+    ]
+  },
+  "editColor": {
+    "label": "颜色设置",
+    "controls": [
+      {
+        "type": "color",
+        "target": ".colorBar",
+        "label": "色带颜色"
+      }
+    ]
+  }
+}
