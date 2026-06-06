@@ -1,11 +1,19 @@
 # Sign Maker by Chitose.City
+
 这是一个基于HTML + JS的导视标牌生成器，目前只支持桌面端使用。
+
 操作逻辑类似于Auto Layout + 组件库，如果使用过Figma应该挺容易习惯的。
 
+**fork前注意：源代码写得很烂。**
+
 A HTML + JS based viewfinding signages maker. Currently only for desktop.
+
 The idea is inspired by Auto Layout & Components Library, so if you used Figma this should be pretty easy to use.
 
+**Warning before you fork: Really bad codes ahead.**
+
 ## 功能 Features
+
 * 通过组件系统直观的制作、编辑导视标牌。
 * Use the Component system to make & edit signage.
 * 内置光照，吊杆效果，模拟现实导视标牌效果。
