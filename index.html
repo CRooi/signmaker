@@ -14,9 +14,10 @@
         <div class="logo">
             <img src="logo.svg" alt="Sign Maker by Chitose.City">
             <div class="info">
-                <span>alpha release 20260605.3</span>
-                <a href="https://chitose.city">More on Chitose.City</a>
-                <a href="https://github.com/hcrk9/signmaker/issues">报告问题 Report an Issue</a>
+                <a target="_blank" href="https://chitose.city"><img src="icon/ui/chitose.svg" alt=""></a>
+                <a target="_blank" href="https://github.com/hcrk9/signmaker/issues"><img src="icon/ui/feedback.svg" alt=""></a>
+                <a target="_blank" href="https://github.com/hcrk9/signmaker/"><img src="icon/ui/github.svg" alt=""></a>
+                <a><img src="icon/ui/settings.svg" alt=""></a>
             </div>
         </div>
         <div class="componentsPanel">
@@ -127,6 +128,7 @@
 
     let featureConfig = {};
     let presetLinesConfig = [];
+    let presetFacilitiesConfig = [];
     let compositeComponents = [];
     let basicComponents = [];
     let categoriesConfig = [];
@@ -141,6 +143,11 @@
         const canvas = document.getElementById('canvas');
         if (canvas) {
             canvas.style.zoom = zoomLevel;
+            // 强制重绘 canvas 和伪元素，防止缩放时的渲染伪影
+            canvas.style.visibility = 'hidden';
+            requestAnimationFrame(() => {
+                canvas.style.visibility = 'visible';
+            });
         }
         const zoomLabel = document.getElementById('zoomLabel');
         if (zoomLabel) {
@@ -321,17 +328,13 @@
         }
     }
 
-    function createComponentButton(item, kind, onClick) {
+    function createComponentButton(item, kind, onClick, currentCategoryId) {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'componentItem';
 
         const thumbnail = document.createElement('img');
         let srcPath = `icon/thumbnail/${item.id}.svg`;
-
-        if (item.ingredients && item.ingredients[0] && item.ingredients[0].props && item.ingredients[0].props.src) {
-            srcPath = item.ingredients[0].props.src.replace('icon/', 'icon/thumbnail/');
-        }
 
         // Adjust thumbnail path for addons
         if (currentAddonId !== 'default' && !srcPath.startsWith('http') && !srcPath.startsWith('data:') && !srcPath.startsWith('./addons/')) {
@@ -343,19 +346,14 @@
         thumbnail.className = 'componentThumbnail';
 
         thumbnail.addEventListener('error', () => {
-            let fallbackSrc = item.ingredients && item.ingredients[0] && item.ingredients[0].props && item.ingredients[0].props.src;
-            if (fallbackSrc) {
-                if (currentAddonId !== 'default' && !fallbackSrc.startsWith('http') && !fallbackSrc.startsWith('data:') && !fallbackSrc.startsWith('./addons/')) {
-                    fallbackSrc = `./addons/${currentAddonId}/${fallbackSrc}`;
-                }
-                thumbnail.src = fallbackSrc;
-            }
+            // Fallback to default icon if thumbnail not found
+            thumbnail.src = 'icon/default.svg';
         });
 
         if (item.thumbnailBg === 'dark') {
             thumbnail.style.backgroundColor = '#b0b0b0';
         } else {
-            thumbnail.style.backgroundColor = '#FFFFFF';
+            thumbnail.style.backgroundColor = 'transparent';
         }
 
         button.appendChild(thumbnail);
@@ -379,7 +377,15 @@
 
         button.draggable = true;
         button.addEventListener('dragstart', (e) => {
-            const payload = { kind, id: item.id, category: item.category || kind, name: item.name };
+            // 处理 category 为字符串或数组的情况
+            let categoryValue = item.category || kind;
+            if (Array.isArray(categoryValue)) {
+                // 如果当前分类在组件的分类列表中，使用当前分类；否则使用第一个
+                categoryValue = currentCategoryId && categoryValue.includes(currentCategoryId) 
+                    ? currentCategoryId 
+                    : categoryValue[0];
+            }
+            const payload = { kind, id: item.id, category: categoryValue, name: item.name };
             currentDragPayload = payload;
             const payloadStr = JSON.stringify(payload);
             e.dataTransfer.setData('application/json', payloadStr);
@@ -394,9 +400,15 @@
         return button;
     }
 
-    function createComponentsGroup(title, items, renderItem) {
+    function createComponentsGroup(title, items, renderItem, categoryId) {
         const group = document.createElement('div');
         group.className = 'componentGroup';
+        
+        // 为 componentGroup 添加分类 class
+        if (categoryId) {
+            group.classList.add(categoryId);
+        }
+        
         const heading = document.createElement('h3');
         heading.textContent = title;
         group.appendChild(heading);
@@ -423,25 +435,47 @@
 
         const currentCategory = categories.find((category) => category.id === categoryId);
         const groupTitle = currentCategory ? `${currentCategory.nameCN || currentCategory.id}组件` : '当前分类组件';
-        const categoryItems = composites.filter((item) => item.category === categoryId);
+        const categoryItems = composites.filter((item) => {
+            // 支持 category 为字符串或数组
+            if (Array.isArray(item.category)) {
+                return item.category.includes(categoryId);
+            }
+            return item.category === categoryId;
+        });
 
         const compositeGroup = createComponentsGroup(groupTitle, categoryItems, (item) => {
             return createComponentButton(item, 'composite', () => {
                 const node = renderCompositeComponent(item, basicComponents);
-                const category = item.id === 'lineColorText' ? 'lineColor' : (item.category || 'default');
-                const zoneClass = item.id === 'lineColorText' ? 'zone lineColor' : `zone ${item.category || 'default'}`;
+                // 处理 category 为字符串或数组的情况
+                let categoryValue = item.category || 'default';
+                if (Array.isArray(categoryValue)) {
+                    // 使用当前打开的分类
+                    categoryValue = categoryId && categoryValue.includes(categoryId) 
+                        ? categoryId 
+                        : categoryValue[0];
+                }
+                const category = item.id === 'lineColorText' ? 'lineColor' : categoryValue;
+                const zoneClass = item.id === 'lineColorText' ? 'zone lineColor' : `zone ${categoryValue}`;
                 appendComponentToZone(category, zoneClass, node, canvas);
                 openPropertyPanel(node);
-            });
-        });
+            }, categoryId);
+        }, categoryId);
         list.appendChild(compositeGroup);
 
         const basicGroup = createComponentsGroup('基础组件', basicComponents, (basic) => {
             return createComponentButton(basic, 'basic', () => {
                 const node = renderBasicComponent(basic, {}, undefined, false);
-                appendComponentToZone(basic.category || 'basic', 'zone basic', node, canvas);
+                // 处理 category 为字符串或数组的情况
+                let categoryValue = basic.category || 'basic';
+                if (Array.isArray(categoryValue)) {
+                    // 使用当前打开的分类
+                    categoryValue = categoryId && categoryValue.includes(categoryId) 
+                        ? categoryId 
+                        : categoryValue[0];
+                }
+                appendComponentToZone(categoryValue, 'zone basic', node, canvas);
                 openPropertyPanel(node);
-            });
+            }, categoryId);
         });
         list.appendChild(basicGroup);
     }
@@ -1008,6 +1042,7 @@ function applyHorizontalStretch(element, ratio) {
                     const classes = element.className.split(/\s+/);
                     const isLineDropdown = (control.label && control.label.includes('线路')) || featKey === 'selectLine';
                     const isIconDropdown = (control.label && control.label.includes('图标')) || featKey === 'selectIcon';
+                    const isFacilityDropdown = (control.label && control.label.includes('设施')) || featKey === 'selectFacility';
 
                     // 1. 寻找对应的组件配置（支持复合组件与基础组件类名精确查找）
                     let componentConfig = compositeComponents.find(c => classes.includes(c.id));
@@ -1224,6 +1259,106 @@ function applyHorizontalStretch(element, ratio) {
                                     targetImg.src = fullPath;
                                 }
                             });
+                        } else if (isFacilityDropdown) {
+                            // Facility dropdown logic
+                            const facilities = presetFacilitiesConfig;
+                            
+                            if (useList) {
+                                input = document.createElement('div');
+                                input.className = 'optionListGrid';
+
+                                const targetImg = targetEl || element.querySelector('img');
+                                const targetTextCN = element.querySelector('.textCN');
+                                const targetTextEN = element.querySelector('.textEN');
+                                const currentSrc = targetImg ? (targetImg.getAttribute('src') || targetImg.src || '') : '';
+
+                                facilities.forEach(facility => {
+                                    const btn = document.createElement('button');
+                                    btn.className = 'optionBtn';
+                                    btn.textContent = facility.nameCN;
+
+                                    // Check if this facility is currently selected
+                                    let resolvedPath = `icon/${facility.id}.svg`;
+                                    if (currentAddonId !== 'default' && !resolvedPath.startsWith('http') && !resolvedPath.startsWith('data:') && !resolvedPath.startsWith('./addons/')) {
+                                        resolvedPath = `./addons/${currentAddonId}/${resolvedPath}`;
+                                    }
+
+                                    const normCurrent = currentSrc.replace(/^\.\//, '').replace(/\\/g, '/');
+                                    const normFile = resolvedPath.replace(/^\.\//, '').replace(/\\/g, '/');
+                                    if (normCurrent && (normCurrent === normFile || normCurrent.endsWith('/' + normFile) || normFile.endsWith('/' + normCurrent))) {
+                                        btn.classList.add('active');
+                                    }
+
+                                    btn.addEventListener('click', () => {
+                                        input.querySelectorAll('.optionBtn').forEach(b => b.classList.remove('active'));
+                                        btn.classList.add('active');
+
+                                        if (targetImg) {
+                                            targetImg.src = resolvedPath;
+                                        }
+                                        if (targetTextCN) {
+                                            targetTextCN.textContent = facility.nameCN;
+                                        }
+                                        if (targetTextEN) {
+                                            targetTextEN.textContent = facility.nameEN;
+                                        }
+                                    });
+                                    input.appendChild(btn);
+                                });
+                            } else {
+                                input = document.createElement('select');
+
+                                const defaultOption = document.createElement('option');
+                                defaultOption.value = '';
+                                defaultOption.textContent = '选择设施...';
+                                input.appendChild(defaultOption);
+
+                                const targetImg = targetEl || element.querySelector('img');
+                                const targetTextCN = element.querySelector('.textCN');
+                                const targetTextEN = element.querySelector('.textEN');
+                                const currentSrc = targetImg ? (targetImg.getAttribute('src') || targetImg.src || '') : '';
+
+                                let matched = false;
+                                facilities.forEach(facility => {
+                                    const option = document.createElement('option');
+                                    let resolvedPath = `icon/${facility.id}.svg`;
+                                    if (currentAddonId !== 'default' && !resolvedPath.startsWith('http') && !resolvedPath.startsWith('data:') && !resolvedPath.startsWith('./addons/')) {
+                                        resolvedPath = `./addons/${currentAddonId}/${resolvedPath}`;
+                                    }
+                                    option.value = resolvedPath;
+                                    option.textContent = facility.nameCN;
+                                    option.dataset.nameEN = facility.nameEN;
+
+                                    const normCurrent = currentSrc.replace(/^\.\//, '').replace(/\\/g, '/');
+                                    const normFile = resolvedPath.replace(/^\.\//, '').replace(/\\/g, '/');
+                                    if (normCurrent && (normCurrent === normFile || normCurrent.endsWith('/' + normFile) || normFile.endsWith('/' + normCurrent))) {
+                                        option.selected = true;
+                                        matched = true;
+                                    }
+                                    input.appendChild(option);
+                                });
+
+                                if (!matched) {
+                                    defaultOption.selected = true;
+                                }
+
+                                input.addEventListener('change', (e) => {
+                                    if (!e.target.value) return;
+                                    const fullPath = e.target.value;
+                                    const selectedOption = e.target.options[e.target.selectedIndex];
+                                    const nameEN = selectedOption.dataset.nameEN || '';
+
+                                    if (targetImg) {
+                                        targetImg.src = fullPath;
+                                    }
+                                    if (targetTextCN) {
+                                        targetTextCN.textContent = selectedOption.textContent;
+                                    }
+                                    if (targetTextEN) {
+                                        targetTextEN.textContent = nameEN;
+                                    }
+                                });
+                            }
                         }
                     }
                     } // 结束 editText 对齐 dropdown 的特殊处理
@@ -1297,7 +1432,7 @@ function applyHorizontalStretch(element, ratio) {
                 projectStyleSelect.innerHTML = '';
                 const defaultOpt = document.createElement('option');
                 defaultOpt.value = 'default';
-                defaultOpt.textContent = 'CRT - GK标准';
+                defaultOpt.textContent = '重庆轨道交通 - 2017标准';
                 projectStyleSelect.appendChild(defaultOpt);
 
                 addonsList.forEach(addon => {
@@ -1346,6 +1481,7 @@ function applyHorizontalStretch(element, ratio) {
             basicComponents = basicComponentsData;
             featureConfig = featuresData;
             presetLinesConfig = defaultData.lines || [];
+            presetFacilitiesConfig = defaultData.facilities || [];
             compositeComponents = defaultData.components || [];
             signsConfig = signsData;
 

@@ -4,7 +4,7 @@
     --bg-canvas-container: #FFFFFF;
     --bg-panel: #f0f0f0;
     --bg-panel-light: #fafafa;
-    --bg-panel-dark: #333F49;
+    --bg-panel-dark: #333F48;
     --bg-item-hover: #F3F3F3;
     --bg-btn-hover: #e6e6e6;
     --bg-btn-active: #cccccc;
@@ -431,6 +431,11 @@ h3 {
     height: 28px;
 }
 
+.controlRow select {
+    max-height: 100px;
+    overflow-y: auto;
+}
+
 .controlRow input[type="number"] {
     min-width: 0;
     padding: 4px;
@@ -440,13 +445,36 @@ h3 {
     height: 28px;
 }
 
+/* 1. 先设置外层容器的宽高和圆角 */
 .controlRow input[type="color"] {
-    width: 32px;
+    -webkit-appearance: none;  /* 移除 Chrome/Safari 的默认外观 */
+    -moz-appearance: none;     /* 移除 Firefox 的默认外观 */
+    appearance: none;
+    
+    width: 28px;
     height: 28px;
-    border: 1px solid var(--border-color-default);
+    border: none;
+    border-radius: 50%;        /* 核心：变成圆形 */
     cursor: pointer;
+    background: transparent;   /* 撑满外框 */
     padding: 0;
-    flex-shrink: 0;
+}
+
+/* 2. 针对 Chrome、Edge 和 Safari 的内部特定样式重置 */
+.controlRow input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;                /* 移除内边距 */
+    border-radius: 50%;
+}
+
+.controlRow input[type="color"]::-webkit-color-swatch {
+    border: 2px solid #ccc;    /* 加个边框更好看 */
+    border-radius: 50%;        /* 核心：让内部颜色块也变成圆形 */
+}
+
+/* 3. 针对 Firefox 的内部特定样式重置 */
+.controlRow input[type="color"]::-moz-color-swatch {
+    border: 2px solid #ccc;
+    border-radius: 50%;        /* 核心：让 Firefox 的内部颜色块变成圆形 */
 }
 
 .presetLineGrid {
@@ -524,19 +552,36 @@ h3 {
 
 .info {
     display: flex;
-    flex-flow: column nowrap;
+    flex-flow: row nowrap;
     text-align: right;
-}
-
-.info span {
-    font-size: 10px;
-    color: var(--text-placeholder);
+    gap: 8px;
 }
 
 .info a {
-    color: var(--text-primary);
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: var(--bg-header);
+    border: 1px solid var(--border-color-btn);
+    border-radius: 50%;
+
     text-decoration: none;
     font-size: 12px;
+
+    transition: filter 0.3s;
+}
+
+.info a:hover {
+    filter: brightness(0.95);
+    transition: filter 0.3s;
+}
+
+.info a img {
+    height: 24px;
 }
 
 #canvas {
@@ -557,15 +602,22 @@ h3 {
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* 防止亚像素渲染导致的缝隙 */
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 #canvas::after {
     content: '';
     position: absolute;
-    top: calc(0px - var(--canvas-border-width-top, 6px));
-    left: calc(0px - var(--canvas-border-width-left, 6px));
-    right: calc(0px - var(--canvas-border-width-right, 6px));
-    bottom: calc(0px - var(--canvas-border-width-bottom, 10px));
+    /* 完全覆盖父元素，使用负 margin 扩展 */
+    top: 0;
+    left: 0;
+    /* 使用负 margin 来扩展边框区域，并额外扩展 0.5px 以覆盖亚像素缝隙 */
+    top: calc(0px - var(--canvas-border-width-top, 6px) + 0.5px);
+    left: calc(0px - var(--canvas-border-width-left, 6px) + 0.5px);
+    right: calc(0px - var(--canvas-border-width-right, 6px) + 0.5px);
+    bottom: calc(0px - var(--canvas-border-width-bottom, 10px) + 0.5px);
     border-color: var(--canvas-border-color, var(--canvas-border-default));
     border-width: var(--canvas-border-width, 6px 6px 10px 6px);
     border-style: var(--canvas-border-style, solid);
@@ -573,8 +625,75 @@ h3 {
     pointer-events: none;
     z-index: 10;
     box-sizing: border-box;
+    /* 确保与父元素完美对齐，防止缝隙 */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    /* 强制硬件加速，提高渲染精度 */
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
 }
 
+/* ========================================
+   Component Styles
+   ======================================== */
+
+/* --- Category Background and Text Colors --- */
+.zone[data-category="enter"] {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+.zone[data-category="exit"] {
+    background-color: #FFD701;
+    color: #000000;
+}
+
+.zone[data-category="facility"] {
+    background-color: #333F48;
+    color: #ffffff;
+}
+
+.zone[data-category="facility"] .icon {
+    filter: brightness(0) invert(1) !important;
+}
+
+/* --- Station Name Text Styles --- */
+.stationName .textBox {
+    margin-top: 11px;
+}
+
+.stationName .textBox .textCN {
+    font-size: 42px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.stationName .textBox .textEN {
+    font-size: 23px;
+    font-weight: 700;
+    text-align: center;
+}
+
+
+/* --- Exit Info Text Styles --- */
+.exitInfo {
+    align-self: flex-start;
+    margin-top: 19px;
+}
+
+.exitInfo .textCN {
+    font-size: 20px;
+    font-weight: 400;
+    text-box: trim-both cap alphabetic;
+    color: var(--fg-color, inherit);
+}
+
+.exitInfo .textEN {
+    font-size: 13px;
+    color: var(--fg-color, inherit);
+}
+
+/* --- Basic Component Styles --- */
 .largeText,
 .textCN,
 .textEN,
@@ -582,6 +701,54 @@ h3 {
     white-space: nowrap;
 }
 
+.largeText {
+    font-family: 'Noto Sans';
+    font-size: 82px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    font-feature-settings: 'pnum' on, 'lnum' on;
+    text-box: trim-both cap alphabetic;
+    color: var(--fg-color, inherit);
+}
+
+.textBox {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 6px;
+}
+
+.textCN {
+    font-size: 31px;
+    font-weight: 400;
+    text-box: trim-both cap alphabetic;
+    color: var(--fg-color, inherit);
+}
+
+.textEN {
+    font-size: 20px;
+    color: var(--fg-color, inherit);
+}
+
+.icon {
+    height: 60px;
+}
+
+.colorBar {
+    width: 24px;
+    height: 75px;
+    margin-top: 15px;
+    color: var(--current-line-bg-default);
+}
+
+.composite {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- Zone Styles --- */
 .zone {
     padding: 0 16px;
     display: flex;
@@ -608,53 +775,33 @@ h3 {
     filter: brightness(0) invert(1) !important;
 }
 
-.colorBar {
-    width: 24px;
-    height: 72px;
-    margin-top: 18px;
-    color: var(--current-line-bg-default);
+/* Components List Styles */
+
+.componentGroup.enter .componentThumbnail {
+    background: linear-gradient(0deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.5)), #fff;
 }
 
-.icon {
-    height: 56px;
+.componentGroup.exit .componentItem {
+    background-color: #FFD701;
 }
 
-.largeText {
-    font-family: 'Noto Sans';
-    font-size: 77px;
-    font-weight: 500;
-    letter-spacing: -0.03em;
-    font-feature-settings: 'pnum' on, 'lnum' on;
-    text-box: trim-both cap alphabetic;
-    color: var(--fg-color, inherit);
+.componentGroup.exit .componentThumbnail {
+    background: linear-gradient(0deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0)), #FFD701;
 }
 
-.textBox {
-    display: flex;
-    flex-flow: column nowrap;
-    gap: 6px;
-    margin-top: 3px;
+.componentGroup.facility .componentItem {
+    background-color: #333F48;
+    color: #ffffff;
 }
 
-.textCN {
-    font-size: 30px;
-    font-weight: 400;
-    text-box: trim-both cap alphabetic;
-    color: var(--fg-color, inherit);
+.componentGroup.facility .componentThumbnail {
+    background: linear-gradient(0deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0)), #333F48;
+    filter: brightness(0) invert(1) !important;
 }
 
-.textEN {
-    font-size: 18px;
-    color: var(--fg-color, inherit);
-}
-
-.composite {
-    display: flex;
-    flex-flow: row nowrap;
-    gap: 12px;
-    align-items: center;
-    justify-content: center;
-}
+/* ========================================
+   End of Component Styles
+   ======================================== */
 
 .insert-line {
     position: absolute;
@@ -801,7 +948,7 @@ h3 {
 }
 
 .styleSetting select {
-    width: 120px;
+    width: 180px;
     padding: 4px;
     font-size: 12px;
     background: var(--bg-panel);

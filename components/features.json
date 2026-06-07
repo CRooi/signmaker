@@ -96,6 +96,15 @@
       }
     ]
   },
+  "selectFacility": {
+    "label": "选择设施",
+    "controls": [
+      {
+        "type": "dropdown",
+        "target": "img"
+      }
+    ]
+  },
   "advancedOptions": {
     "label": "高级选项",
     "controls": [

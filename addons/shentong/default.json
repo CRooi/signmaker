@@ -23,32 +23,116 @@
   ],
   "lines": [
     {
+      "id": "Loop",
+      "number": "",
+      "nameCN": "环线",
+      "nameEN": "Loop Line",
+      "color": "#F1A900"
+    },
+    {
       "id": "L1",
       "number": "1",
       "nameCN": "号线",
       "nameEN": "Line 1",
-      "color": "#E60012"
+      "color": "#E4002B"
     },
     {
       "id": "L2",
       "number": "2",
       "nameCN": "号线",
       "nameEN": "Line 2",
-      "color": "#009E52"
+      "color": "#007B34"
     },
     {
       "id": "L3",
       "number": "3",
       "nameCN": "号线",
       "nameEN": "Line 3",
-      "color": "#FFD700"
+      "color": "#003DA6"
     },
     {
       "id": "L4",
       "number": "4",
       "nameCN": "号线",
       "nameEN": "Line 4",
-      "color": "#0054A6"
+      "color": "#DC8633"
+    },
+    {
+      "id": "L5",
+      "number": "5",
+      "nameCN": "号线",
+      "nameEN": "Line 5",
+      "color": "#00A3E0"
+    },
+    {
+      "id": "L6",
+      "number": "6",
+      "nameCN": "号线",
+      "nameEN": "Line 6",
+      "color": "#F67599"
+    },
+    {
+      "id": "L7",
+      "number": "7",
+      "nameCN": "号线",
+      "nameEN": "Line 7",
+      "color": "#008C95"
+    },
+    {
+      "id": "L9",
+      "number": "9",
+      "nameCN": "号线",
+      "nameEN": "Line 9",
+      "color": "#871F42"
+    },
+    {
+      "id": "L10",
+      "number": "10",
+      "nameCN": "号线",
+      "nameEN": "Line 10",
+      "color": "#5F249E"
+    },
+    {
+      "id": "L15",
+      "number": "15",
+      "nameCN": "号线",
+      "nameEN": "Line 15",
+      "color": "#0057B7"
+    },
+    {
+      "id": "L17",
+      "number": "17",
+      "nameCN": "号线",
+      "nameEN": "Line 17",
+      "color": "#9F5CC0"
+    },
+    {
+      "id": "L18",
+      "number": "18",
+      "nameCN": "号线",
+      "nameEN": "Line 18",
+      "color": "#2CD5C5"
+    },
+    {
+      "id": "L24",
+      "number": "24",
+      "nameCN": "号线",
+      "nameEN": "Line 24",
+      "color": "#D6A148"
+    },
+    {
+      "id": "L27",
+      "number": "27",
+      "nameCN": "号线",
+      "nameEN": "Line 27",
+      "color": "#685BC7"
+    },
+    {
+      "id": "JT",
+      "number": "",
+      "nameCN": "江跳线",
+      "nameEN": "Jiangtiao Line",
+      "color": "#007DCE"
     }
   ],
   "components": [
@@ -221,9 +305,7 @@
           "componentId": "textBox",
           "props": {
             "textCN": "金钟",
-            "textEN": "Admiralty",
-            "textCNStyle": "font-weight:700;text-align:center",
-            "textENStyle": "font-weight:700;text-align:center"
+            "textEN": "Admiralty"
           }
         }
       ]
