@@ -26,14 +26,19 @@ The idea is inspired by Auto Layout & Components Library, so if you used Figma t
 
 ## 更新 Update log
 
-暂无。
+**v20260607.1**
+* 现已同步重庆轨道线路信息。
+* 添加了出站、设施种类组件（部分图标来自Wikimedia Common），以及更多进站组件。
+* 重写了左栏信息部分。
+* 一些样式更新和功能改善。
 
 ## To-do / Roadmap
 
 - [x] 一个可拖拽放置组件的“标牌”画布
 - [x] 使用属性菜单方便的修改组件属性
 - [x] 支持导出能用的SVG文件
-- [ ] 制作所有分区的导视组件
+- [x] 解决缩放导致画布与描边出现空隙的问题
+- [x] 制作所有分区的导视组件
 - [ ] 支持移动分区位置
 - [ ] 合并字宽、对齐设置为区域设置，添加字间距设置；高级选项新增固定宽度选项
 - [ ] 支持自定义画布宽度
@@ -42,7 +47,6 @@ The idea is inspired by Auto Layout & Components Library, so if you used Figma t
 - [ ] 制作“预设标牌”功能，支持使用预制标牌json快速排版
 - [ ] 支持上传本地图标
 - [ ] 导出面板重置——支持调整输出图片大小
-- [ ] 解决缩放导致画布与描边出现空隙的问题
 - [ ] 暗色模式支持，多语言支持
 - [ ] 完成Addon支持 - 制作一个Sample Addon（申通）
 - [ ] 写一个操作指南
