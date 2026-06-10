@@ -148,7 +148,7 @@
             <button id="btnCancelSettings">取消修改</button>
             <button id="btnSaveSettings">保存修改</button>
         </div>
-        <span class="version">alpha release v20260607.1</span>
+        <span class="version">alpha release v20260610.1</span>
     </section>
 
     <section class="rightPanel">
@@ -2080,6 +2080,45 @@ function applyHorizontalStretch(element, ratio) {
         if (customStyleEl) {
             customStyleEl.textContent = style.customCSS || '';
         }
+
+        // Apply custom HTML if defined
+        applyCustomHTML(style.customHTML);
+    }
+
+    /**
+     * 应用自定义 HTML 到画布底部
+     * @param {string} customHTML - 要插入的 HTML 字符串
+     */
+    function applyCustomHTML(customHTML) {
+        const canvas = document.getElementById('canvas');
+        if (!canvas) return;
+
+        // 清除之前插入的 customHTML
+        const existingCustomHTML = canvas.querySelector('.custom-html-overlay');
+        if (existingCustomHTML) {
+            existingCustomHTML.remove();
+        }
+
+        // 如果没有新的 customHTML，直接返回
+        if (!customHTML || customHTML.trim() === '') {
+            return;
+        }
+
+        // 创建容器并插入 HTML
+        const container = document.createElement('div');
+        container.className = 'custom-html-overlay';
+        container.innerHTML = customHTML;
+        
+        // 设置样式：不干扰交互，不影响 canvas 的 flex 布局
+        container.style.position = 'absolute';
+        container.style.bottom = '0';
+        container.style.left = '0';
+        container.style.width = '100%';
+        container.style.pointerEvents = 'none';
+        container.style.zIndex = '1';
+
+        // 插入到 canvas 的最底部（在所有 zone 之后）
+        canvas.appendChild(container);
     }
 
     async function handleProjectStyleChange(e) {
@@ -3643,16 +3682,24 @@ function applyHorizontalStretch(element, ratio) {
     }
 
     /**
-     * 🔄 读取 CSS 变量并完美同步到 SVG 几何坐标系中
-     * 当某一边框宽度为 0 时，相邻边框自动延伸以覆盖完整范围
-     */
+    * 🔄 读取 CSS 变量并完美同步到 SVG 几何坐标系中
+    * (彻底修复 parseInt(0) || 10 导致的假数值 Bug，并利用纯 100% 高度+剪切解决贴边)
+    */
     function syncSvgBorderWithCssVariables(canvas) {
         const computedStyle = getComputedStyle(canvas);
 
-        const tWidth = parseInt(computedStyle.getPropertyValue('--canvas-border-width-top')) || 6;
-        const bWidth = parseInt(computedStyle.getPropertyValue('--canvas-border-width-bottom')) || 10;
-        const lWidth = parseInt(computedStyle.getPropertyValue('--canvas-border-width-left')) || 6;
-        const rWidth = parseInt(computedStyle.getPropertyValue('--canvas-border-width-right')) || 6;
+        // ✨ 核心修复 1：安全的宽度读取器，保留数字 0，只有真没值时才用默认值
+        const getBorderWidth = (varName, defValue) => {
+            const val = computedStyle.getPropertyValue(varName).trim();
+            if (val === '') return defValue;
+            const parsed = parseInt(val, 10);
+            return isNaN(parsed) ? defValue : parsed;
+        };
+
+        const tWidth = getBorderWidth('--canvas-border-width-top', 6);
+        const bWidth = getBorderWidth('--canvas-border-width-bottom', 10);
+        const lWidth = getBorderWidth('--canvas-border-width-left', 6);
+        const rWidth = getBorderWidth('--canvas-border-width-right', 6);
 
         const tGrad = computedStyle.getPropertyValue('--canvas-border-gradient-top').trim();
         const bGrad = computedStyle.getPropertyValue('--canvas-border-gradient-bottom').trim();
@@ -3669,105 +3716,74 @@ function applyHorizontalStretch(element, ratio) {
             svgContainer.style.height = `calc(100% + ${tWidth + bWidth}px)`;
         }
 
-        // 边框重叠量 (单位: 像素)
-        const overlap = 2;
+        // 抗锯齿纵向安全垫片 (像素值)
+        const overlap = 2; 
 
-        // 判断上下边框是否为 0
-        const isTopZero = tWidth === 0;
-        const isBottomZero = bWidth === 0;
-        
-        // 判断左右边框是否为 0
-        const isLeftZero = lWidth === 0;
-        const isRightZero = rWidth === 0;
-
-        // 1. 上下边框处理
+        // 1. 上下边框设置：宽度 100% 铺满，高度精准
         const rectTop = document.getElementById('svg-rect-top');
         if (rectTop) {
-            rectTop.setAttribute('height', tWidth);
-            // 如果左边框或右边框为 0，上下边框需要向对应方向延伸
-            if (isLeftZero) {
-                rectTop.setAttribute('x', -overlap);
-                rectTop.setAttribute('width', `calc(100% + ${overlap}px)`);
-            } else if (isRightZero) {
-                rectTop.setAttribute('x', 0);
-                rectTop.setAttribute('width', `calc(100% + ${overlap}px)`);
-            } else {
+            if (tWidth > 0) {
                 rectTop.setAttribute('x', 0);
                 rectTop.setAttribute('width', '100%');
+                rectTop.setAttribute('height', tWidth);
+            } else {
+                rectTop.setAttribute('height', 0);
             }
         }
 
         const rectBottom = document.getElementById('svg-rect-bottom');
         if (rectBottom) {
-            rectBottom.setAttribute('y', `calc(100% - ${bWidth}px)`);
-            rectBottom.setAttribute('height', bWidth);
-            // 如果左边框或右边框为 0，上下边框需要向对应方向延伸
-            if (isLeftZero) {
-                rectBottom.setAttribute('x', -overlap);
-                rectBottom.setAttribute('width', `calc(100% + ${overlap}px)`);
-            } else if (isRightZero) {
-                rectBottom.setAttribute('x', 0);
-                rectBottom.setAttribute('width', `calc(100% + ${overlap}px)`);
-            } else {
+            if (bWidth > 0) {
                 rectBottom.setAttribute('x', 0);
                 rectBottom.setAttribute('width', '100%');
+                rectBottom.setAttribute('y', `calc(100% - ${bWidth}px)`);
+                rectBottom.setAttribute('height', bWidth);
+            } else {
+                rectBottom.setAttribute('height', 0);
             }
         }
 
-        // 2. 左右边框处理
-        // 计算左右边框的起始 y 坐标和高度
-        let leftStartY, rightStartY, leftHeight, rightHeight;
-        
-        if (isTopZero && isBottomZero) {
-            // 上下边框都为 0，左右边框覆盖整个高度
-            leftStartY = -overlap;
-            rightStartY = -overlap;
-            leftHeight = `calc(100% + ${overlap * 2}px)`;
-            rightHeight = `calc(100% + ${overlap * 2}px)`;
-        } else if (isTopZero) {
-            // 只有上边框为 0，左右边框向上延伸至顶部
-            leftStartY = -overlap;
-            rightStartY = -overlap;
-            leftHeight = `calc(100% - ${bWidth - overlap}px)`;
-            rightHeight = `calc(100% - ${bWidth - overlap}px)`;
-        } else if (isBottomZero) {
-            // 只有下边框为 0，左右边框向下延伸至底部
-            leftStartY = tWidth - overlap;
-            rightStartY = tWidth - overlap;
-            leftHeight = `calc(100% - ${tWidth - overlap}px)`;
-            rightHeight = `calc(100% - ${tWidth - overlap}px)`;
-        } else {
-            // 上下边框都存在，使用标准逻辑
-            leftStartY = tWidth - overlap;
-            rightStartY = tWidth - overlap;
-            leftHeight = `calc(100% - ${tWidth + bWidth - (overlap * 2)}px)`;
-            rightHeight = `calc(100% - ${tWidth + bWidth - (overlap * 2)}px)`;
-        }
+        // 💡 智能重叠法：如果顶边存在，y 向上提 2px 插入交界处；如果顶边为 0，起跑线严格为 0
+        const startY = tWidth > 0 ? (tWidth - overlap) : 0;
 
-        // 左边边框
+        // 2. 左边框设置：宽度严格保持真实，高度直接暴力贯穿
         const rectLeft = document.getElementById('svg-rect-left');
         if (rectLeft) {
-            rectLeft.setAttribute('x', 0);
-            rectLeft.setAttribute('width', lWidth);
-            rectLeft.setAttribute('y', leftStartY);
-            rectLeft.setAttribute('height', leftHeight);
+            if (lWidth > 0) {
+                rectLeft.setAttribute('x', 0);
+                rectLeft.setAttribute('width', lWidth);
+                rectLeft.setAttribute('y', startY);
+                // ✨ 核心修复 2：不再进行复杂的 calc 减法计算。
+                // 高度直接设为 100%，多出来的部分自然会被外层的 clipPath 切得干干净净，100% 完美贴底！
+                rectLeft.setAttribute('height', '100%'); 
+            } else {
+                rectLeft.setAttribute('width', 0);
+                rectLeft.setAttribute('height', 0);
+            }
         }
 
-        // 右边边框
+        // 3. 右边框设置：宽度严格保持真实，高度直接暴力贯穿
         const rectRight = document.getElementById('svg-rect-right');
         if (rectRight) {
-            rectRight.setAttribute('x', `calc(100% - ${rWidth}px)`);
-            rectRight.setAttribute('width', rWidth);
-            rectRight.setAttribute('y', rightStartY);
-            rectRight.setAttribute('height', rightHeight);
+            if (rWidth > 0) {
+                rectRight.setAttribute('x', `calc(100% - ${rWidth}px)`);
+                rectRight.setAttribute('width', rWidth);
+                rectRight.setAttribute('y', startY);
+                rectRight.setAttribute('height', '100%'); // 同样暴力贯穿，靠 clipPath 兜底
+            } else {
+                rectRight.setAttribute('width', 0);
+                rectRight.setAttribute('height', 0);
+            }
         }
 
+        // 4. 更新颜色/渐变
         applyCssGradientOrColorToSvg('svg-border-top', tGrad);
         applyCssGradientOrColorToSvg('svg-border-bottom', bGrad);
         applyCssGradientOrColorToSvg('svg-border-left', lGrad);
         applyCssGradientOrColorToSvg('svg-border-right', rGrad);
     }
-    /**
+
+     /**
      * 🧪 解析标准的 CSS linear-gradient 或纯色 Hex 颜色并注入到 SVG Defs 中（完美适配渐变角度）
      */
     function applyCssGradientOrColorToSvg(gradientId, cssValue) {

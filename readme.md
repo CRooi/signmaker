@@ -26,13 +26,18 @@ The idea is inspired by Auto Layout & Components Library, so if you used Figma t
 
 ## 更新 Update log
 
-v20260609.1
+### v20260610.1
 
-* 添加了文字间距设置。
-* 新增固定宽度选项，适用于组件和区域。
-* 支持自定义画布宽度。
-* 新增设定面板-样式自定义部分。
-* 修改了描边逻辑为svg，添加了描边渐变效果。
+* 完整适配了TypeB标牌。Supported TypeB Signage.
+* 支持在signs.json配置创建自定义HTML内容。Added CustomHTML parameter in signs.json.
+
+### v20260609.1
+
+* 添加了文字间距设置。Letter spacing now can be configured.
+* 新增固定宽度选项，适用于组件和区域。Static width for components & zones.
+* 支持自定义画布宽度。Custom canvas width.
+* 新增设定面板-样式自定义部分。New settings panel with style customization.
+* 修改了描边逻辑为svg，添加了描边渐变效果。Borders are now rendered with SVG, supporting gradients.
 
 ## To-do / Roadmap
 
@@ -45,7 +50,7 @@ v20260609.1
 - [x] 支持自定义画布宽度
 - [x] 设定面板——自定义背景色、前景色、字体、字重等参数
 - [x] 支持保存json到浏览器内
-- [ ] 按照重庆轨道GK导视标准调节默认样式，并制作各个标牌样式
+- [x] 按照重庆轨道GK导视标准调节默认样式，并制作各个标牌样式
 - [ ] 制作“预设标牌”功能，支持使用预制标牌json快速排版
 - [ ] 支持上传本地图标
 - [ ] 导出面板重置——支持调整输出图片大小
