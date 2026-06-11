@@ -1,0 +1,106 @@
+[
+  {
+    "id": "transfer_station_name",
+    "title": "换乘站名牌",
+    "type": "进站",
+    "author": "Hachi",
+    "thumbnail": "icon/thumbnail/presets/transfer_station_name.png",
+    "dataFile": "presets/transfer_station_name.json"
+  },
+  {
+    "id": "boarding_guide_sign",
+    "title": "乘车指引牌",
+    "type": "进站",
+    "author": "Hachi",
+    "thumbnail": "icon/thumbnail/presets/boarding_guide_sign.png",
+    "dataFile": "presets/boarding_guide_sign.json"
+  },
+    {
+    "id": "direction_guide_sign",
+    "title": "方向指引牌",
+    "type": "进站",
+    "author": "Hachi",
+    "thumbnail": "icon/thumbnail/presets/direction_guide_sign.png",
+    "dataFile": "presets/direction_guide_sign.json"
+  },
+  {
+    "id": "direction_guide_sign_2",
+    "title": "方向指引牌②",
+    "type": "进站",
+    "author": "Hachi",
+    "thumbnail": "icon/thumbnail/presets/direction_guide_sign_2.png",
+    "dataFile": "presets/direction_guide_sign_2.json"
+  },
+  {
+    "id": "ticket_check_guide_sign",
+    "title": "检票指引牌",
+    "type": "进站",
+    "author": "Hachi",
+    "thumbnail": "icon/thumbnail/presets/ticket_check_guide_sign.png",
+    "dataFile": "presets/ticket_check_guide_sign.json"
+  },
+  {
+    "id": "facility_name_sign",
+    "title": "设施名称牌",
+    "type": "设施",
+    "author": "Hachi",
+    "thumbnail": "icon/thumbnail/presets/facility_name_sign.png",
+    "dataFile": "presets/facility_name_sign.json"
+  },
+  {
+    "id": "facility_guide_sign",
+    "title": "设施引导牌",
+    "type": "设施",
+    "author": "Hachi",
+    "thumbnail": "icon/thumbnail/presets/facility_guide_sign.png",
+    "dataFile": "presets/facility_guide_sign.json"
+  },
+  {
+    "id": "exit_transfer_guide_sign",
+    "title": "出口&换乘指引牌",
+    "type": "出口",
+    "author": "Hachi",
+    "thumbnail": "icon/thumbnail/presets/exit_transfer_guide_sign.png",
+    "dataFile": "presets/exit_transfer_guide_sign.json"
+  },
+  {
+    "id": "exit_transfer_guide_sign_2",
+    "title": "出口&换乘指引牌②",
+    "type": "出口",
+    "author": "Hachi",
+    "thumbnail": "icon/thumbnail/presets/exit_transfer_guide_sign_2.png",
+    "dataFile": "presets/exit_transfer_guide_sign_2.json"
+  },
+  {
+    "id": "exit_guide_sign",
+    "title": "出口指引牌",
+    "type": "出口",
+    "author": "Hachi",
+    "thumbnail": "icon/thumbnail/presets/exit_guide_sign.png",
+    "dataFile": "presets/exit_guide_sign.json"
+  },
+  {
+    "id": "exit_info_sign",
+    "title": "出口信息牌",
+    "type": "出口",
+    "author": "Hachi",
+    "thumbnail": "icon/thumbnail/presets/exit_info_sign.png",
+    "dataFile": "presets/exit_info_sign.json"
+  },
+  {
+    "id": "exit_number_guide_sign",
+    "title": "出口号指引牌",
+    "type": "出口",
+    "author": "Hachi",
+    "thumbnail": "icon/thumbnail/presets/exit_number_guide_sign.png",
+    "dataFile": "presets/exit_number_guide_sign.json"
+  },
+  {
+    "id": "exit_number_guide_sign_2",
+    "title": "出口号指引牌②",
+    "type": "出口",
+    "author": "Hachi",
+    "thumbnail": "icon/thumbnail/presets/exit_number_guide_sign_2.png",
+    "dataFile": "presets/exit_number_guide_sign_2.json"
+  }
+]

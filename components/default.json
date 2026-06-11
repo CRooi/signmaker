@@ -142,6 +142,11 @@
       "nameEN": "Tickets"
     },
     {
+      "id": "check_in",
+      "nameCN": "自动检票",
+      "nameEN": "Automatic Check-In"
+    },
+    {
       "id": "stairs",
       "nameCN": "楼梯",
       "nameEN": "Stairs"

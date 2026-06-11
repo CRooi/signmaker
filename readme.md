@@ -26,6 +26,12 @@ The idea is inspired by Auto Layout & Components Library, so if you used Figma t
 
 ## 更新 Update log
 
+### v20260611.1
+
+* 添加了预设标牌功能，你可以快速的创建符合标准的标牌。Added Preset Signs feature.
+* 修复导出时CSS filter失效问题。Fixed CSS filter export issue.
+* 画布内图标现在使用SVG渲染，实现了更好的导出效果。Icons in canvas are now SVGs instead of img.
+
 ### v20260610.1
 
 * 完整适配了TypeB标牌。Supported TypeB Signage.
@@ -51,9 +57,12 @@ The idea is inspired by Auto Layout & Components Library, so if you used Figma t
 - [x] 设定面板——自定义背景色、前景色、字体、字重等参数
 - [x] 支持保存json到浏览器内
 - [x] 按照重庆轨道GK导视标准调节默认样式，并制作各个标牌样式
-- [ ] 制作“预设标牌”功能，支持使用预制标牌json快速排版
+- [x] 制作“预设标牌”功能，支持使用预制标牌json快速排版
+- [ ] 设置菜单支持调整输出图片大小
+- [ ] 设置菜单光照设置
+- [ ] 导出保存菜单互斥
 - [ ] 支持上传本地图标
-- [ ] 导出面板重置——支持调整输出图片大小
+- [ ] 支持纵向复制画布（分行效果）
 - [ ] 暗色模式支持，多语言支持
 - [ ] 完成Addon支持 - 制作一个Sample Addon（申通）
 - [ ] 写一个操作指南

@@ -1,0 +1,64 @@
+{
+  "projectName": "出口&换乘指引牌",
+  "addonId": "default",
+  "canvasWidth": "576px",
+  "signStyleId": "XG-TypeA",
+  "effects": {
+    "lighting": false,
+    "hanger": false,
+    "fade": false
+  },
+  "zones": [
+    {
+      "category": "exit",
+      "className": "zone exit",
+      "style": "",
+      "components": [
+        {
+          "id": "component0",
+          "className": "composite arrow",
+          "dataset": {
+            "feature": "selectIcon advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\" viewBox=\"0 0 40 40\" fill=\"currentColor\" id=\"component1\" data-src=\"icon/arrow.svg\" class=\"icon\">\n<path d=\"M0 19.8869L1.87319e-07 27.995L16.8386 10.8496V40H22.8122V10.8496L39.6509 27.995V19.8869L19.8254 0L0 19.8869Z\" fill=\"currentColor\"></path>\n</svg>"
+        },
+        {
+          "id": "component2",
+          "className": "composite exit",
+          "dataset": {
+            "feature": "selectIcon editText advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"400\" viewBox=\"0 0 400 400\" fill=\"currentColor\" id=\"component3\" data-src=\"icon/exit.svg\" class=\"icon\">\n<g clip-path=\"url(#clip0_50_138)\">\n<path d=\"M360 0C382.091 0 400 17.9086 400 40V360C400 382.091 382.091 400 360 400H40C17.9086 400 0 382.091 0 360V40C0 17.9086 17.9086 0 40 0H360ZM40 355H360V140H305V160H320V315H80V160H95V140H40V355ZM127.5 152.5V216.5L177.5 166.5V255H222.5V166.5L272.5 216.5V152.5L200 80L127.5 152.5ZM98.2461 120L115.566 130L161.755 50L153.095 45L144.434 40L98.2461 120ZM238.246 50L284.434 130L293.095 125L301.755 120L255.566 40L238.246 50Z\" fill=\"currentColor\"></path>\n</g>\n<defs>\n<clipPath id=\"clip0_50_138\">\n<rect width=\"400\" height=\"400\" fill=\"currentColor\"></rect>\n</clipPath>\n</defs>\n</svg><div class=\"textBox\" id=\"component4\"><span class=\"textCN\">出口</span><span class=\"textEN\">Exit</span></div>"
+        }
+      ]
+    },
+    {
+      "category": "enter",
+      "className": "zone enter",
+      "style": "justify-content: flex-end; flex: 1 1 0%;",
+      "components": [
+        {
+          "id": "component5",
+          "className": "composite lineNumber",
+          "dataset": {
+            "feature": "selectLine editText advancedOptions",
+            "lineId": "L3"
+          },
+          "style": "",
+          "innerHTML": "<div class=\"colorBar\" id=\"component6\" style=\"background-color: rgb(0, 61, 166); order: 99;\" data-line-id=\"L3\"></div><span class=\"largeText\" id=\"component7\" style=\"text-align: right;\">3</span><div class=\"textBox\" id=\"component8\"><span class=\"textCN\" style=\"text-align: right;\">号线</span><span class=\"textEN\" style=\"text-align: right;\">Line</span></div>"
+        },
+        {
+          "id": "component9",
+          "className": "composite arrow",
+          "dataset": {
+            "feature": "selectIcon advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"56\" height=\"56\" viewBox=\"0 0 56 56\" fill=\"currentColor\" id=\"component10\" data-src=\"icon/arrows/rightup.svg\" class=\"icon\">\n<g clip-path=\"url(#clip0_47_67)\">\n<path d=\"M17.0266 0.0608948L9.00005 8.08745L42.6425 7.78382L13.7851 36.6412L19.6986 42.5548L48.556 13.6974L48.2524 47.3398L56.2789 39.3132L56.3398 0L17.0266 0.0608948Z\" fill=\"currentColor\"></path>\n</g>\n<defs>\n<clipPath id=\"clip0_47_67\">\n<rect width=\"56\" height=\"56\" fill=\"currentColor\"></rect>\n</clipPath>\n</defs>\n</svg>"
+        }
+      ]
+    }
+  ]
+}

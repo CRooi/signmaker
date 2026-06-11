@@ -1,0 +1,47 @@
+{
+  "projectName": "出口信息牌",
+  "addonId": "default",
+  "canvasWidth": "600px",
+  "signStyleId": "XG-TypeB",
+  "effects": {
+    "lighting": false,
+    "hanger": false,
+    "fade": false
+  },
+  "zones": [
+    {
+      "category": "exit",
+      "className": "zone exit",
+      "style": "flex: 1 1 0%;",
+      "components": [
+        {
+          "id": "component0",
+          "className": "composite arrow",
+          "dataset": {
+            "feature": "selectIcon advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\" viewBox=\"0 0 40 40\" fill=\"currentColor\" id=\"component1\" data-src=\"icon/arrow.svg\" class=\"icon\">\n<path d=\"M0 19.8869L1.87319e-07 27.995L16.8386 10.8496V40H22.8122V10.8496L39.6509 27.995V19.8869L19.8254 0L0 19.8869Z\" fill=\"currentColor\"></path>\n</svg>"
+        },
+        {
+          "id": "component2",
+          "className": "composite exitNumber",
+          "dataset": {
+            "feature": "editText advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<span class=\"largeText\" id=\"component3\">2</span><div class=\"textBox\" id=\"component4\"><span class=\"textCN\">出口</span><span class=\"textEN\">Exit</span></div>"
+        },
+        {
+          "id": "component5",
+          "className": "composite exitInfo",
+          "dataset": {
+            "feature": "editText advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<div class=\"textBox\" id=\"component6\"><span class=\"textCN\">长江一路 中山三路 重庆轨道交通(集团)有限公司</span><span class=\"textEN\">Changjiang 1st Rd., Zhongshan 3rd Rd., Chongqing Rail Transit (Group) Co., Ltd.</span></div>"
+        }
+      ]
+    }
+  ]
+}

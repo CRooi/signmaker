@@ -1,0 +1,48 @@
+{
+  "projectName": "检票指引牌",
+  "addonId": "default",
+  "canvasWidth": "576px",
+  "signStyleId": "XG-TypeA",
+  "effects": {
+    "lighting": false,
+    "hanger": false,
+    "fade": false
+  },
+  "zones": [
+    {
+      "category": "enter",
+      "className": "zone enter",
+      "style": "",
+      "components": [
+        {
+          "id": "component0",
+          "className": "composite arrow",
+          "dataset": {
+            "feature": "selectIcon advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"56\" height=\"56\" viewBox=\"0 0 56 56\" fill=\"currentColor\" id=\"component1\" data-src=\"icon/arrows/left.svg\" class=\"icon\">\n<g clip-path=\"url(#clip0_47_57)\">\n<path d=\"M27.8417 0.244357L39.193 0.244358L15.1895 23.8184L56 23.8184L56 32.1815L15.1895 32.1815L39.193 55.7556L27.8417 55.7556L2.42647e-06 28L27.8417 0.244357Z\" fill=\"currentColor\"></path>\n</g>\n<defs>\n<clipPath id=\"clip0_47_57\">\n<rect width=\"56\" height=\"56\" fill=\"currentColor\"></rect>\n</clipPath>\n</defs>\n</svg>"
+        },
+        {
+          "id": "component2",
+          "className": "composite lineNumber",
+          "dataset": {
+            "feature": "selectLine editText advancedOptions",
+            "lineId": "L3"
+          },
+          "style": "",
+          "innerHTML": "<div class=\"colorBar\" id=\"component3\" style=\"background-color: rgb(0, 61, 166);\" data-line-id=\"L3\"></div><span class=\"largeText\" id=\"component4\">3</span><div class=\"textBox\" id=\"component5\"><span class=\"textCN\">号线</span><span class=\"textEN\">Line 3</span></div>"
+        },
+        {
+          "id": "component6",
+          "className": "composite facility",
+          "dataset": {
+            "feature": "selectFacility editText advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"400\" viewBox=\"0 0 400 400\" fill=\"currentColor\" id=\"component7\" data-src=\"icon/check_in.svg\" class=\"icon\">\n<g clip-path=\"url(#clip0_98_115)\">\n<path d=\"M360 0C382.091 0 400 17.9086 400 40V360C400 382.091 382.091 400 360 400H40C17.9086 400 0 382.091 0 360V40C0 17.9086 17.9086 0 40 0H360ZM298.571 53.5898C282.716 53.5899 269.863 66.4428 269.863 82.2979V191.361H339.72C345.005 191.361 349.289 195.646 349.289 200.931C349.289 206.215 345.005 210.501 339.72 210.501H321.538L310.377 221.678C308.941 223.116 306.992 223.924 304.96 223.924H269.863V318.635C269.864 334.49 282.716 347.343 298.571 347.343H367.471V53.5898H298.571ZM34.4502 178.661L103.966 245.503C123.218 264.015 148.889 274.354 175.598 274.354H186.629C192.692 274.354 198.508 271.957 202.811 267.686L245.946 224.854H203.835L193.812 233.694C191.016 236.16 187.418 237.521 183.69 237.522L178.549 237.525C175.651 237.527 172.756 237.023 170.142 235.773C156.04 229.036 146.418 218.036 146.418 209.276C146.418 202.407 148.071 198.07 151.767 192.215C152.571 190.941 154.072 190.297 155.558 190.549C167.474 192.573 179.757 194.921 190.583 196.957L170.738 216.803C170.485 217.057 170.342 217.401 170.342 217.76C170.342 218.507 170.948 219.112 171.695 219.112H303.685C304.7 219.112 305.673 218.709 306.391 217.991L327.279 197.104H311.969L299.528 209.543H193.309L203.51 199.341C212.073 200.866 218.724 201.888 222.017 201.888H223.93C235.413 201.888 246.896 193.275 246.896 188.49V187.533C246.896 181.699 239.782 177.472 229.072 173.778L232.543 170.309H266.992V159.782H229.344C228.329 159.782 227.355 160.186 226.637 160.903L217.312 170.227C201.905 166.036 182.937 162.102 166.672 156.516C163.36 155.378 160.193 153.869 157.213 152.03C144.487 144.178 132.864 135.005 119.177 124.671C111.429 118.822 101.954 115.764 92.2471 115.764H80.3896L34.4502 75.3115V178.661Z\" fill=\"currentColor\"></path>\n</g>\n<defs>\n<clipPath id=\"clip0_98_115\">\n<rect width=\"400\" height=\"400\" fill=\"currentColor\"></rect>\n</clipPath>\n</defs>\n</svg><div class=\"textBox\" id=\"component8\"><span class=\"textCN\">自动检票</span><span class=\"textEN\">Automatic Check-In</span></div>"
+        }
+      ]
+    }
+  ]
+}

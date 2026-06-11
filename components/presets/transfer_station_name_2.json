@@ -1,0 +1,76 @@
+{
+  "projectName": "换乘站名牌",
+  "addonId": "default",
+  "canvasWidth": "810px",
+  "signStyleId": "XG-TypeA",
+  "effects": {
+    "lighting": true,
+    "hanger": false,
+    "fade": false
+  },
+  "zones": [
+    {
+      "category": "enter",
+      "className": "zone enter",
+      "style": "flex: 1 1 0%;",
+      "components": [
+        {
+          "id": "component0",
+          "className": "composite trainIcon",
+          "dataset": {
+            "feature": "selectIcon advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"401\" height=\"400\" viewBox=\"0 0 401 400\" fill=\"currentColor\" id=\"component1\" data-src=\"icon/metro.svg\" class=\"icon\">\n<path d=\"M360.455 0C382.546 0.000263886 400.455 17.9088 400.455 40V360C400.455 382.091 382.546 400 360.455 400H40.4551C18.3637 400 0.454102 382.091 0.454102 360V40C0.454102 17.9086 18.3637 0 40.4551 0H360.455ZM201.255 32.6191C87.2718 32.6192 62.634 104.77 58.0986 116.505C54.1585 126.7 50.2588 145.016 50.2588 159.625V367.381L85.5381 326.614V159.625C85.5381 147.487 88.748 135.004 94.5537 124.345C99.7604 114.785 121.504 72.6016 200.985 72.6016C280.467 72.6016 301.355 115.052 305.446 124.345C310.337 135.454 314.462 147.487 314.462 159.625V323.739L349.741 367.381V159.625C349.741 145.016 346.678 124.672 341.901 116.505C335.246 105.123 315.238 32.6191 201.255 32.6191ZM144.633 107.098C134.106 107.098 126.305 112.428 126.305 122.467V264.679C126.305 274.718 135.377 284.278 145.904 284.278V304.662L107.489 357.189H131.009L167.072 304.662H232.928L268.991 357.189H292.511L254.095 304.662V284.278C264.622 284.278 273.694 274.718 273.694 264.679V122.467C273.694 112.428 266.657 107.098 256.13 107.098H144.633ZM160.017 236.455C168.309 236.455 175.031 243.836 175.031 251.743C175.031 259.651 168.308 267.031 160.017 267.031C151.724 267.031 145.002 259.651 145.002 251.743C145.002 243.835 151.724 236.455 160.017 236.455ZM238.327 236.455C246.619 236.455 253.342 243.835 253.342 251.743C253.342 259.651 246.619 267.031 238.327 267.031C230.035 267.031 223.313 259.651 223.313 251.743C223.314 243.836 230.035 236.455 238.327 236.455ZM254.095 201.96H145.904V144.729H254.095V201.96ZM220.384 118.073C225.044 118.073 227.439 121.983 227.439 126.427C227.439 130.871 225.044 135.321 220.384 135.321H179.616C174.956 135.321 171.777 130.871 171.776 126.427C171.776 121.983 174.956 118.073 179.616 118.073H220.384Z\" fill=\"currentColor\"></path>\n</svg>"
+        },
+        {
+          "id": "component0",
+          "className": "composite trainIcon",
+          "dataset": {
+            "feature": "selectIcon advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"401\" height=\"400\" viewBox=\"0 0 401 400\" fill=\"currentColor\" id=\"component1\" data-src=\"icon/monorail.svg\" class=\"icon\">\n<path d=\"M360.092 0C382.183 0.000131944 400.092 17.9087 400.092 40V360C400.092 382.091 382.183 400 360.092 400H40.0918C18.0004 400 0.0917969 382.091 0.0917969 360V40C0.0917969 17.9086 18.0004 0 40.0918 0H360.092ZM171.429 257.143V371.429H228.571V257.143H171.429ZM180.952 28.5713C155.555 28.5713 109.524 35.7148 85.7148 66.667V238.096L123.81 314.286H161.905V247.619H238.096V314.286H276.19L314.286 238.096V66.667C290.477 35.7147 244.445 28.5713 219.048 28.5713H180.952ZM138.096 171.429L138.341 171.435C140.857 171.562 142.857 173.643 142.857 176.19V185.715C142.857 188.344 140.725 190.476 138.096 190.477H109.523C106.894 190.476 104.762 188.344 104.762 185.715V176.19C104.762 173.561 106.894 171.429 109.523 171.429H138.096ZM290.477 171.429L290.722 171.435C293.238 171.562 295.238 173.643 295.238 176.19V185.715C295.238 188.344 293.106 190.476 290.477 190.477H261.905C259.275 190.477 257.143 188.345 257.143 185.715V176.19C257.143 173.561 259.275 171.429 261.905 171.429H290.477ZM285.714 76.1904C290.974 76.1904 295.238 80.455 295.238 85.7148V142.857C295.238 148.117 290.974 152.381 285.714 152.381H114.286L113.796 152.369C108.764 152.114 104.762 147.953 104.762 142.857V85.7148C104.762 80.455 109.026 76.1904 114.286 76.1904H285.714Z\" fill=\"currentColor\"></path>\n</svg>"
+        },
+        {
+          "id": "component11",
+          "className": "composite lineNumberList",
+          "dataset": {
+            "feature": "selectLine editText advancedOptions",
+            "lineId": "L1"
+          },
+          "style": "",
+          "innerHTML": "<div class=\"colorBar\" id=\"component12\" style=\"background-color: rgb(228, 0, 43);\" data-line-id=\"L1\"></div><span class=\"largeText\" id=\"component13\" style=\"font-stretch: 75%;\">1</span>"
+        },
+        {
+          "id": "component2",
+          "className": "composite lineNumber",
+          "dataset": {
+            "feature": "selectLine editText advancedOptions",
+            "lineId": "L3"
+          },
+          "style": "",
+          "innerHTML": "<div class=\"colorBar\" id=\"component3\" style=\"background-color: rgb(0, 61, 166);\" data-line-id=\"L3\"></div><span class=\"largeText\" id=\"component4\" style=\"font-stretch: 75%;\">3</span><div class=\"textBox\" id=\"component5\"><span class=\"textCN\">号线</span><span class=\"textEN\">Line 3</span></div>"
+        },
+        {
+          "id": "component6",
+          "className": "composite stationName",
+          "dataset": {
+            "feature": "editText advancedOptions"
+          },
+          "style": "flex: 1 1 0%;",
+          "innerHTML": "<div class=\"textBox\" id=\"component7\"><span class=\"textCN\">两路口</span><span class=\"textEN\">Lianglukou</span></div>"
+        },
+        {
+          "id": "component8",
+          "className": "composite entranceNumber selected",
+          "dataset": {
+            "feature": "editText advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<span class=\"largeText\" id=\"component9\" style=\"letter-spacing: 0px; font-stretch: 75%;\">1</span><div class=\"textBox\" id=\"component10\"><span class=\"textCN\" style=\"letter-spacing: 0px;\">出入口</span><span class=\"textEN\" style=\"letter-spacing: 0px;\">Entrance</span></div>"
+        }
+      ]
+    }
+  ]
+}

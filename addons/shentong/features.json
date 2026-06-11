@@ -109,5 +109,54 @@
         "label": "色带颜色"
       }
     ]
+  },
+  "zoneSettings": {
+    "label": "区域设置",
+    "controls": [
+      {
+        "id": "zoneWidth",
+        "type": "dropdown",
+        "label": "字宽",
+        "options": [
+          { "name": "标准", "value": "normal" },
+          { "name": "紧缩", "value": "condensed" }
+        ],
+        "useList": true
+      },
+      {
+        "id": "zoneAlign",
+        "type": "dropdown",
+        "label": "对齐",
+        "options": [
+          { "name": "左", "value": "left" },
+          { "name": "中", "value": "center" },
+          { "name": "右", "value": "right" }
+        ],
+        "useList": true
+      }
+    ]
+  },
+  "advancedOptions": {
+    "label": "高级选项",
+    "controls": [
+      {
+        "id": "widthMode",
+        "type": "widthMode",
+        "label": "宽度",
+        "options": [
+          { "name": "适应", "value": "fit" },
+          { "name": "填充", "value": "fill" },
+          { "name": "固定", "value": "fixed" }
+        ]
+      },
+      {
+        "id": "letterSpacing",
+        "type": "number",
+        "target": "self",
+        "label": "文字间距(px)",
+        "step": 0.5,
+        "property": "letterSpacing"
+      }
+    ]
   }
 }

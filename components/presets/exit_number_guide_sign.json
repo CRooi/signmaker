@@ -1,0 +1,38 @@
+{
+  "projectName": "出口号指引牌",
+  "addonId": "default",
+  "canvasWidth": "576px",
+  "signStyleId": "XG-TypeA",
+  "effects": {
+    "lighting": false,
+    "hanger": false,
+    "fade": false
+  },
+  "zones": [
+    {
+      "category": "exit",
+      "className": "zone exit",
+      "style": "flex: 1 1 0%; justify-content: center;",
+      "components": [
+        {
+          "id": "component0",
+          "className": "composite arrow",
+          "dataset": {
+            "feature": "selectIcon advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\" viewBox=\"0 0 40 40\" fill=\"currentColor\" id=\"component1\" data-src=\"icon/arrow.svg\" class=\"icon\">\n<path d=\"M0 19.8869L1.87319e-07 27.995L16.8386 10.8496V40H22.8122V10.8496L39.6509 27.995V19.8869L19.8254 0L0 19.8869Z\" fill=\"currentColor\"></path>\n</svg>"
+        },
+        {
+          "id": "component8",
+          "className": "composite exitNumber",
+          "dataset": {
+            "feature": "editText advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<span class=\"largeText\" id=\"component9\">1-6</span><div class=\"textBox\" id=\"component10\"><span class=\"textCN\">出口</span><span class=\"textEN\">Exit</span></div>"
+        }
+      ]
+    }
+  ]
+}

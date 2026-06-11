@@ -1,0 +1,63 @@
+{
+  "projectName": "出口号指引牌②",
+  "addonId": "default",
+  "canvasWidth": "810px",
+  "signStyleId": "XG-TypeA",
+  "effects": {
+    "lighting": false,
+    "hanger": false,
+    "fade": false
+  },
+  "zones": [
+    {
+      "category": "exit",
+      "className": "zone exit",
+      "style": "flex: 1 1 0%;",
+      "components": [
+        {
+          "id": "component0",
+          "className": "composite arrow",
+          "dataset": {
+            "feature": "selectIcon advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\" viewBox=\"0 0 40 40\" fill=\"currentColor\" id=\"component1\" data-src=\"icon/arrow.svg\" class=\"icon\">\n<path d=\"M0 19.8869L1.87319e-07 27.995L16.8386 10.8496V40H22.8122V10.8496L39.6509 27.995V19.8869L19.8254 0L0 19.8869Z\" fill=\"currentColor\"></path>\n</svg>"
+        },
+        {
+          "id": "component2",
+          "className": "composite exitNumber",
+          "dataset": {
+            "feature": "editText advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<span class=\"largeText\" id=\"component3\">1-4/7</span><div class=\"textBox\" id=\"component4\"><span class=\"textCN\">出口</span><span class=\"textEN\">Exit</span></div>"
+        }
+      ]
+    },
+    {
+      "category": "exit",
+      "className": "zone exit",
+      "style": "flex: 1 1 0%; justify-content: flex-end;",
+      "components": [
+        {
+          "id": "component5",
+          "className": "composite exitNumber",
+          "dataset": {
+            "feature": "editText advancedOptions"
+          },
+          "style": "flex-direction: row-reverse;",
+          "innerHTML": "<span class=\"largeText\" id=\"component6\" style=\"text-align: right;\">5-6</span><div class=\"textBox\" id=\"component7\"><span class=\"textCN\" style=\"text-align: right;\">出口</span><span class=\"textEN\" style=\"text-align: right;\">Exit</span></div>"
+        },
+        {
+          "id": "component10",
+          "className": "composite arrow",
+          "dataset": {
+            "feature": "selectIcon advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"56\" height=\"56\" viewBox=\"0 0 56 56\" fill=\"currentColor\" id=\"component11\" data-src=\"icon/arrows/downleft.svg\" class=\"icon\">\n<g clip-path=\"url(#clip0_47_100)\">\n<path d=\"M16.1836 0C25.0201 1.13483e-06 32.1836 7.16345 32.1836 16V20.002H32.1816V40.8105L55.7559 16.8066V28.1582L28 56L0.244141 28.1582V16.8066L23.8184 40.8105V19H23.8203V16.0039C23.8201 11.7847 20.3999 8.36428 16.1807 8.36426H4.19727V0H16.1836Z\" fill=\"currentColor\"></path>\n</g>\n<defs>\n<clipPath id=\"clip0_47_100\">\n<rect width=\"56\" height=\"56\" fill=\"currentColor\"></rect>\n</clipPath>\n</defs>\n</svg>"
+        }
+      ]
+    }
+  ]
+}

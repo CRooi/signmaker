@@ -1,0 +1,80 @@
+{
+  "projectName": "方向指引牌",
+  "addonId": "default",
+  "canvasWidth": "810px",
+  "signStyleId": "XG-TypeA",
+  "effects": {
+    "lighting": false,
+    "hanger": false,
+    "fade": false
+  },
+  "zones": [
+    {
+      "category": "lineColor",
+      "className": "zone lineColor",
+      "style": "flex: 1 1 0%; --current-line-bg: #F67599;",
+      "components": [
+        {
+          "id": "component7",
+          "className": "composite arrow",
+          "dataset": {
+            "feature": "selectIcon advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"56\" height=\"56\" viewBox=\"0 0 56 56\" fill=\"currentColor\" id=\"component8\" data-src=\"icon/arrows/left.svg\" class=\"icon\">\n<g clip-path=\"url(#clip0_47_57)\">\n<path d=\"M27.8417 0.244357L39.193 0.244358L15.1895 23.8184L56 23.8184L56 32.1815L15.1895 32.1815L39.193 55.7556L27.8417 55.7556L2.42647e-06 28L27.8417 0.244357Z\" fill=\"currentColor\"></path>\n</g>\n<defs>\n<clipPath id=\"clip0_47_57\">\n<rect width=\"56\" height=\"56\" fill=\"currentColor\"></rect>\n</clipPath>\n</defs>\n</svg>"
+        },
+        {
+          "id": "component0",
+          "className": "composite lineColorText",
+          "dataset": {
+            "feature": "editText advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<div class=\"textBox\" id=\"component1\"><span class=\"textCN\">茶园方向</span><span class=\"textEN\">To Chayuan</span></div>"
+        }
+      ]
+    },
+    {
+      "category": "basic",
+      "className": "zone basic",
+      "style": "justify-content: center; flex: 0 0 auto; width: 64px;",
+      "components": [
+        {
+          "id": "component2",
+          "className": "largeText",
+          "dataset": {
+            "feature": "editText advancedOptions",
+            "manualAlign": "center"
+          },
+          "style": "flex: 0 0 auto;",
+          "innerHTML": "6"
+        }
+      ]
+    },
+    {
+      "category": "lineColor",
+      "className": "zone lineColor",
+      "style": "flex: 1 1 0%; justify-content: flex-end; --current-line-bg: #F67599;",
+      "components": [
+        {
+          "id": "component5",
+          "className": "composite lineColorText",
+          "dataset": {
+            "feature": "editText advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<div class=\"textBox\" id=\"component6\"><span class=\"textCN\" style=\"text-align: right;\">北碚方向</span><span class=\"textEN\" style=\"text-align: right;\">To Beibei</span></div>"
+        },
+        {
+          "id": "component9",
+          "className": "composite arrow",
+          "dataset": {
+            "feature": "selectIcon advancedOptions"
+          },
+          "style": "",
+          "innerHTML": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"56\" height=\"56\" viewBox=\"0 0 56 56\" fill=\"currentColor\" id=\"component10\" data-src=\"icon/arrows/right.svg\" class=\"icon\">\n<g clip-path=\"url(#clip0_47_53)\">\n<path d=\"M28.1583 55.7556H16.807L40.8105 32.1815H-8.74046e-07V23.8185L40.8105 23.8185L16.807 0.244385L28.1583 0.244385L56 28L28.1583 55.7556Z\" fill=\"currentColor\"></path>\n</g>\n<defs>\n<clipPath id=\"clip0_47_53\">\n<rect width=\"56\" height=\"56\" fill=\"currentColor\"></rect>\n</clipPath>\n</defs>\n</svg>"
+        }
+      ]
+    }
+  ]
+}

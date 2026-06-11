@@ -100,7 +100,7 @@
       {
         "id": "iconDropdown",
         "type": "dropdown",
-        "target": "img"
+        "target": ".icon"
       }
     ]
   },
@@ -110,7 +110,7 @@
       {
         "id": "facilityDropdown",
         "type": "dropdown",
-        "target": "img"
+        "target": ".icon"
       }
     ]
   },
@@ -146,13 +146,18 @@
       {
         "id": "widthMode",
         "type": "widthMode",
-        "label": "宽度模式"
+        "label": "宽度",
+        "options": [
+          { "name": "适应", "value": "fit" },
+          { "name": "填充", "value": "fill" },
+          { "name": "固定", "value": "fixed" }
+        ]
       },
       {
         "id": "letterSpacing",
         "type": "number",
         "target": "self",
-        "label": "文字间距(px)",
+        "label": "文字间距",
         "step": 0.5,
         "property": "letterSpacing"
       }
