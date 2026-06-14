@@ -435,7 +435,7 @@
       "name": "出口",
       "description": "",
       "category": "exit",
-      "feature": "selectIcon editText",
+      "feature": "selectIcon rotateIcon editText",
       "useList": true,
       "type": "composite",
       "invertOrder": true,

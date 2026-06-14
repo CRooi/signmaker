@@ -203,7 +203,7 @@
             <button id="btnCancelSettings">取消修改</button>
             <button id="btnSaveSettings">保存修改</button>
         </div>
-        <span class="version">alpha release v20260612.1</span>
+        <span class="version">alpha release v20260614.1</span>
     </section>
 
     <section class="rightPanel">
@@ -236,6 +236,8 @@
                 <div class="lighting-overlay" id="lightingOverlay"></div>
             </div>
         </div>
+
+        <div id="rowActionsBar" class="rowActionsBar"></div>
 
         <div class="propertyPanel">
             <div class="propertyPanelTitleRow">
@@ -506,7 +508,8 @@
     let addonsList = [];
     let currentAddonId = 'default';
     let zoneCounter = 0;
-    let selectedElement = null;
+        let columnCounter = 0;
+        let selectedElement = null;
 
     function updateZoom() {
         const canvas = document.getElementById('canvas');
@@ -623,7 +626,47 @@
         return composite;
     }
 
-    function createZoneElement(category, zoneClass, canvas, beforeNode) {
+    function createColumn(canvas) {
+        const column = document.createElement('div');
+        column.className = 'column';
+        column.id = `column${columnCounter++}`;
+        if (canvas) canvas.appendChild(column);
+        return column;
+    }
+
+    function getActiveColumn(canvas) {
+        if (!canvas) canvas = document.getElementById('canvas');
+        // If a zone is selected, return its parent column
+        if (selectedElement) {
+            const zone = selectedElement.classList.contains('zone')
+                ? selectedElement
+                : selectedElement.closest('.zone');
+            if (zone) {
+                const col = zone.closest('.column');
+                if (col) return col;
+            }
+        }
+        // Otherwise return the first column, or create one if none exist
+        let firstCol = canvas.querySelector('.column');
+        if (!firstCol) firstCol = createColumn(canvas);
+        return firstCol;
+    }
+
+    function ensureDefaultColumn(canvas) {
+        if (!canvas) canvas = document.getElementById('canvas');
+        let col = canvas.querySelector('.column');
+        if (!col) {
+            col = createColumn(canvas);
+            // Move any existing zones (not inside a column) into it
+            const orphanZones = Array.from(canvas.children).filter(
+                child => child.classList.contains('zone')
+            );
+            orphanZones.forEach(z => col.appendChild(z));
+        }
+        return col;
+    }
+
+    function createZoneElement(category, zoneClass, canvas, beforeNode, targetColumn) {
         const zone = document.createElement('div');
         zone.className = zoneClass;
         zone.dataset.category = category;
@@ -643,16 +686,20 @@
             }
         });
 
-        if (beforeNode && beforeNode.parentNode === canvas) {
-            canvas.insertBefore(zone, beforeNode);
+        // Determine which column to place the zone in
+        const column = targetColumn || getActiveColumn(canvas);
+
+        if (beforeNode && beforeNode.parentNode === column) {
+            column.insertBefore(zone, beforeNode);
         } else {
-            canvas.appendChild(zone);
+            column.appendChild(zone);
         }
         return zone;
     }
 
     function appendComponentToZone(category, zoneClass, node, canvas) {
-        const existing = canvas.querySelector(`.zone[data-category="${category}"]`);
+        // Search across all columns for an existing zone with this category
+        const existing = canvas.querySelector(`.column .zone[data-category="${category}"]`);
         const zone = existing || createZoneElement(category, zoneClass, canvas);
         zone.appendChild(node);
         return zone;
@@ -870,7 +917,8 @@
         if (isMoveable) {
             let parent, siblings, index;
             if (selectedElement.classList.contains('zone')) {
-                parent = document.getElementById('canvas');
+                // Zone moves within its column
+                parent = selectedElement.closest('.column') || document.getElementById('canvas');
                 siblings = Array.from(parent.children).filter(child => child.classList.contains('zone'));
                 index = siblings.indexOf(selectedElement);
             } else {
@@ -888,6 +936,8 @@
         }
         if (btnLeft) btnLeft.disabled = !canMoveLeft;
         if (btnRight) btnRight.disabled = !canMoveRight;
+
+        updateRowActionsBar();
     }
 
     function moveSelectedElement(direction) {
@@ -897,7 +947,8 @@
         const isZone = selectedElement.classList.contains('zone');
 
         if (isZone) {
-            parent = document.getElementById('canvas');
+            // Zone moves within its column
+            parent = selectedElement.closest('.column') || document.getElementById('canvas');
             siblings = Array.from(parent.children).filter(child => child.classList.contains('zone'));
             index = siblings.indexOf(selectedElement);
         } else {
@@ -988,7 +1039,17 @@
 
         // If parent zone is empty, remove it
         if (parent.classList.contains('zone') && parent.children.length === 0) {
+            const grandParent = parent.parentNode; // could be a .column
             parent.remove();
+            // If the column is now empty (no zones), remove it too (if multiple columns exist)
+            if (grandParent && grandParent.classList.contains('column')) {
+                const zones = grandParent.querySelectorAll('.zone');
+                const canvas = document.getElementById('canvas');
+                const columns = canvas ? Array.from(canvas.querySelectorAll('.column')) : [];
+                if (zones.length === 0 && columns.length > 1) {
+                    grandParent.remove();
+                }
+            }
         }
 
         deselectAll();
@@ -1004,6 +1065,188 @@
         if (panelTitle) {
             panelTitle.textContent = '属性面板';
         }
+        updateRowActionsBar();
+    }
+
+    const MAX_COLUMNS = 4;
+
+    function updateRowActionsBar() {
+        const bar = document.getElementById('rowActionsBar');
+        if (!bar) return;
+        const canvas = document.getElementById('canvas');
+        if (!canvas) return;
+
+        const columns = Array.from(canvas.querySelectorAll('.column'));
+
+        // Find the column of the currently selected zone
+        let selectedZone = null;
+        if (selectedElement && selectedElement.classList.contains('zone')) {
+            selectedZone = selectedElement;
+        }
+
+        if (!selectedZone) {
+            bar.classList.remove('active');
+            bar.innerHTML = '';
+            return;
+        }
+
+        const parentColumn = selectedZone.closest('.column');
+        if (!parentColumn) {
+            bar.classList.remove('active');
+            bar.innerHTML = '';
+            return;
+        }
+
+        bar.classList.add('active');
+        bar.innerHTML = '';
+
+        if (columns.length === 1) {
+            // Single row: show "add row" button
+            if (columns.length < MAX_COLUMNS) {
+                const addBtn = document.createElement('button');
+                addBtn.className = 'actionBtn';
+                addBtn.textContent = '↓ 添加行';
+                addBtn.addEventListener('click', () => addRow());
+                bar.appendChild(addBtn);
+            }
+        } else {
+            // Multiple rows: show row management menu
+            const rowIndex = columns.indexOf(parentColumn) + 1;
+            const label = document.createElement('span');
+            label.className = 'rowLabel';
+            label.innerHTML = `选中<span class="divider">·</span>行 ${rowIndex}`;
+            bar.appendChild(label);
+
+            const actions = document.createElement('div');
+            actions.className = 'quickActions';
+
+            // Up button
+            const btnUp = document.createElement('button');
+            btnUp.className = 'actionBtn';
+            btnUp.textContent = '↑';
+            btnUp.disabled = (rowIndex === 1);
+            btnUp.addEventListener('click', () => moveRow(parentColumn, 'up'));
+            actions.appendChild(btnUp);
+
+            // Down button
+            const btnDown = document.createElement('button');
+            btnDown.className = 'actionBtn';
+            btnDown.textContent = '↓';
+            btnDown.disabled = (rowIndex === columns.length);
+            btnDown.addEventListener('click', () => moveRow(parentColumn, 'down'));
+            actions.appendChild(btnDown);
+
+            // Duplicate button
+            const btnDup = document.createElement('button');
+            btnDup.className = 'actionBtn';
+            btnDup.textContent = '复制';
+            btnDup.disabled = (columns.length >= MAX_COLUMNS);
+            btnDup.addEventListener('click', () => duplicateRow(parentColumn));
+            actions.appendChild(btnDup);
+
+            // Delete button
+            const btnDel = document.createElement('button');
+            btnDel.className = 'actionBtn';
+            btnDel.textContent = '删除';
+            btnDel.addEventListener('click', () => deleteRow(parentColumn));
+            actions.appendChild(btnDel);
+
+            bar.appendChild(actions);
+        }
+    }
+
+    function addRow() {
+        const canvas = document.getElementById('canvas');
+        if (!canvas) return;
+        const columns = Array.from(canvas.querySelectorAll('.column'));
+        if (columns.length >= MAX_COLUMNS) return;
+
+        const parentColumn = getActiveColumn(canvas);
+        const clone = cloneColumn(parentColumn);
+        canvas.appendChild(clone);
+        updateRowActionsBar();
+    }
+
+    function moveRow(column, direction) {
+        const canvas = document.getElementById('canvas');
+        if (!canvas) return;
+        const columns = Array.from(canvas.querySelectorAll('.column'));
+        const idx = columns.indexOf(column);
+        if (idx === -1) return;
+
+        if (direction === 'up' && idx > 0) {
+            canvas.insertBefore(column, columns[idx - 1]);
+        } else if (direction === 'down' && idx < columns.length - 1) {
+            canvas.insertBefore(columns[idx + 1], column);
+        }
+        updateRowActionsBar();
+    }
+
+    function duplicateRow(column) {
+        const canvas = document.getElementById('canvas');
+        if (!canvas) return;
+        const columns = Array.from(canvas.querySelectorAll('.column'));
+        if (columns.length >= MAX_COLUMNS) return;
+
+        const clone = cloneColumn(column);
+        // Insert after the original column
+        if (column.nextSibling) {
+            canvas.insertBefore(clone, column.nextSibling);
+        } else {
+            canvas.appendChild(clone);
+        }
+        updateRowActionsBar();
+    }
+
+    function deleteRow(column) {
+        const canvas = document.getElementById('canvas');
+        if (!canvas) return;
+        const columns = Array.from(canvas.querySelectorAll('.column'));
+        if (columns.length <= 1) return;
+
+        column.remove();
+        deselectAll();
+    }
+
+    function cloneColumn(column) {
+        const clone = column.cloneNode(true);
+        clone.id = `column${columnCounter++}`;
+
+        // 清理克隆体上的选中状态，防止视觉描边残留
+        clone.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+        if (clone.classList.contains('selected')) {
+            clone.classList.remove('selected');
+        }
+
+        // Reset zone IDs and component IDs, rebind events
+        function resetAndBind(el) {
+            if (el.classList.contains('zone')) {
+                el.id = `zone${zoneCounter++}`;
+                el.addEventListener('click', (e) => {
+                    if (e.target === el) {
+                        e.stopPropagation();
+                        openPropertyPanel(el);
+                    }
+                });
+            } else if (el.id) {
+                el.id = `component${componentCounter++}`;
+            }
+            if (el.classList.contains('composite')) {
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openPropertyPanel(el);
+                });
+            } else if (el.dataset && el.dataset.feature && !el.classList.contains('zone')) {
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openPropertyPanel(el);
+                });
+            }
+            Array.from(el.children).forEach(child => resetAndBind(child));
+        }
+
+        Array.from(clone.children).forEach(child => resetAndBind(child));
+        return clone;
     }
 
     function getSelectionTitle(element) {
@@ -2041,6 +2284,9 @@ function applyHorizontalStretch(element, ratio) {
 
             initSvgBorder();
 
+            // Ensure default column exists in canvas
+            ensureDefaultColumn(document.getElementById('canvas'));
+
             // Apply default style pack
             await loadStylePack('default');
             
@@ -2586,33 +2832,40 @@ function applyHorizontalStretch(element, ratio) {
                 hanger: document.getElementById('btnEffectHanger').classList.contains('active'),
                 fade: document.getElementById('btnEffectFade').classList.contains('active')
             },
-            zones: []
+            columns: [],
+            zones: [] // kept for backward compatibility
         };
 
-        const zones = canvas.querySelectorAll('.zone');
-        zones.forEach(zone => {
-            const zoneData = {
-                category: zone.dataset.category || '',
-                className: zone.className,
-                style: zone.style.cssText,
-                components: []
-            };
-
-            Array.from(zone.children).forEach(child => {
-                if (child.classList.contains('insert-line')) return;
-
-                const compData = {
-                    id: child.id,
-                    tagName: child.tagName.toLowerCase(),
-                    className: child.className,
-                    dataset: { ...child.dataset },
-                    style: child.style.cssText,
-                    innerHTML: child.innerHTML
+        const columns = Array.from(canvas.querySelectorAll('.column'));
+        columns.forEach(col => {
+            const colData = { zones: [] };
+            const zones = col.querySelectorAll('.zone');
+            zones.forEach(zone => {
+                const zoneData = {
+                    category: zone.dataset.category || '',
+                    className: zone.className,
+                    style: zone.style.cssText,
+                    components: []
                 };
-                zoneData.components.push(compData);
-            });
 
-            data.zones.push(zoneData);
+                Array.from(zone.children).forEach(child => {
+                    if (child.classList.contains('insert-line')) return;
+
+                    const compData = {
+                        id: child.id,
+                        tagName: child.tagName.toLowerCase(),
+                        className: child.className,
+                        dataset: { ...child.dataset },
+                        style: child.style.cssText,
+                        innerHTML: child.innerHTML
+                    };
+                    zoneData.components.push(compData);
+                });
+
+                colData.zones.push(zoneData);
+                data.zones.push(zoneData); // backward compat
+            });
+            data.columns.push(colData);
         });
 
         return data;
@@ -2660,68 +2913,83 @@ function applyHorizontalStretch(element, ratio) {
             toggleEffect('fade', data.effects.fade);
         }
 
-        // Remove existing zones
+        // Remove existing columns and orphan zones
+        canvas.querySelectorAll('.column').forEach(c => c.remove());
         canvas.querySelectorAll('.zone').forEach(z => z.remove());
 
-        // Rebuild zones
-        for (const zoneData of data.zones) {
-            const zone = document.createElement('div');
-            zone.className = zoneData.className;
-            zone.dataset.category = zoneData.category;
+        // Normalize data: use columns format, fallback to zones-only (legacy)
+        const columnsData = data.columns && data.columns.length > 0
+            ? data.columns
+            : [{ zones: data.zones || [] }];
 
-            if (zone.classList.contains('lineColor')) {
-                zone.dataset.feature = 'selectLine zoneTextWidth zoneAlign advancedOptions';
-            } else {
-                zone.dataset.feature = 'zoneTextWidth zoneAlign advancedOptions';
-            }
+        // Rebuild columns and zones
+        for (const colData of columnsData) {
+            const column = createColumn(canvas);
 
-            if (zoneData.style) {
-                zone.style.cssText = zoneData.style;
-            }
+            for (const zoneData of colData.zones) {
+                const zone = document.createElement('div');
+                zone.className = zoneData.className;
+                zone.dataset.category = zoneData.category;
 
-            zone.addEventListener('click', (e) => {
-                if (e.target === zone) {
-                    e.stopPropagation();
-                    openPropertyPanel(zone);
-                }
-            });
-
-            for (const compData of zoneData.components) {
-                const tag = compData.tagName || 'div';
-                const el = document.createElement(tag);
-                el.id = compData.id;
-                el.className = compData.className;
-                if (compData.style) {
-                    el.style.cssText = compData.style;
-                }
-                el.innerHTML = compData.innerHTML;
-
-                if (compData.dataset) {
-                    Object.entries(compData.dataset).forEach(([k, v]) => {
-                        el.dataset[k] = v;
-                    });
+                if (zone.classList.contains('lineColor')) {
+                    zone.dataset.feature = 'selectLine zoneTextWidth zoneAlign advancedOptions';
+                } else {
+                    zone.dataset.feature = 'zoneTextWidth zoneAlign advancedOptions';
                 }
 
-                // 恢复 img 标签的 src 属性（用于用户上传的自定义 Data URL 图标）
-                if (tag === 'img' && compData.dataset && compData.dataset.src) {
-                    el.setAttribute('src', compData.dataset.src);
-                    el.setAttribute('alt', 'ICON');
+                if (zoneData.style) {
+                    zone.style.cssText = zoneData.style;
                 }
 
-                if (el.dataset.feature) {
-                    el.addEventListener('click', (e) => {
+                zone.addEventListener('click', (e) => {
+                    if (e.target === zone) {
                         e.stopPropagation();
-                        openPropertyPanel(el);
-                    });
+                        openPropertyPanel(zone);
+                    }
+                });
+
+                for (const compData of zoneData.components) {
+                    const tag = compData.tagName || 'div';
+                    const el = document.createElement(tag);
+                    el.id = compData.id;
+                    el.className = compData.className;
+                    if (compData.style) {
+                        el.style.cssText = compData.style;
+                    }
+                    el.innerHTML = compData.innerHTML;
+
+                    if (compData.dataset) {
+                        Object.entries(compData.dataset).forEach(([k, v]) => {
+                            el.dataset[k] = v;
+                        });
+                    }
+
+                    // 恢复 img 标签的 src 属性（用于用户上传的自定义 Data URL 图标）
+                    if (tag === 'img' && compData.dataset && compData.dataset.src) {
+                        el.setAttribute('src', compData.dataset.src);
+                        el.setAttribute('alt', 'ICON');
+                    }
+
+                    if (el.dataset.feature) {
+                        el.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            openPropertyPanel(el);
+                        });
+                    }
+
+                    zone.appendChild(el);
+
+                    // 自动将旧格式的 img 标签迁移为 inline SVG
+                    await convertAllImgToInlineSvg(el);
                 }
 
-                zone.appendChild(el);
-
-                // 自动将旧格式的 img 标签迁移为 inline SVG
-                await convertAllImgToInlineSvg(el);
+                column.appendChild(zone);
             }
+        }
 
-            canvas.appendChild(zone);
+        // Ensure at least one column exists
+        if (!canvas.querySelector('.column')) {
+            createColumn(canvas);
         }
 
         deselectAll();
@@ -2997,6 +3265,9 @@ function applyHorizontalStretch(element, ratio) {
         if (btnDelete) btnDelete.disabled = true;
         if (btnLeft) btnLeft.disabled = true;
         if (btnRight) btnRight.disabled = true;
+
+        // Create a fresh default column
+        ensureDefaultColumn(canvas);
     }
 
     // Inlining images & background images to base64 for standalone SVG & PNG exports
@@ -3777,7 +4048,7 @@ function applyHorizontalStretch(element, ratio) {
         });
 
         canvas.addEventListener('click', (e) => {
-            if (e.target === canvas) {
+            if (e.target === canvas || e.target.classList.contains('column')) {
                 deselectAll();
             }
         });
@@ -4594,7 +4865,9 @@ function applyHorizontalStretch(element, ratio) {
                     return;
                 }
             }
-            createZoneElement(category, zoneClass, canvas).appendChild(newNode);
+            // If dropped on an empty area, check if we landed on a specific column
+            const targetColumn = el ? el.closest('.column') : null;
+            createZoneElement(category, zoneClass, canvas, null, targetColumn).appendChild(newNode);
             await convertAllImgToInlineSvg(newNode);
             openPropertyPanel(newNode);
         } catch (err) {

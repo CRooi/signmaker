@@ -26,6 +26,12 @@ The idea is inspired by Auto Layout & Components Library, so if you used Figma t
 
 ## 更新 Update log
 
+### v20260614.1
+
+* 添加了分行功能（测试中），支持创建多行导视。Added Multi-Column feature (Preview).
+* 出口图标增加旋转功能。Added rotate feature for exit icon.
+* 一些样式修正。General Fix.
+
 ### v20260612.1
 
 * 添加了分割线组件。Added Divider component.
