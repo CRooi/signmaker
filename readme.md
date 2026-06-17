@@ -26,6 +26,10 @@ The idea is inspired by Auto Layout & Components Library, so if you used Figma t
 
 ## 更新 Update log
 
+### v20260617.1
+
+* 修复了选框被包含在导出图片内的问题。Fixed bug where certain UI elements are included in exported images.
+
 ### v20260616.1
 
 * 将导出图片从html2canvas切换为modern-screenshot，修复了导出数字失去pnum特性的问题。Switched from html2canvas to modern-screenshot, fixing export issues with opentype features.

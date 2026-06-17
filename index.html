@@ -203,7 +203,7 @@
             <button id="btnCancelSettings">取消修改</button>
             <button id="btnSaveSettings">保存修改</button>
         </div>
-        <span class="version">alpha release v20260616.1</span>
+        <span class="version">alpha release v20260617.1</span>
     </section>
 
     <section class="rightPanel">
@@ -3404,6 +3404,10 @@ function applyHorizontalStretch(element, ratio) {
         let domModified = false; // 标记是否已修改 DOM
         let exportSuccess = false;
 
+        // 临时移除所有选中状态，防止高亮描边被导出
+        const selectedElements = Array.from(document.querySelectorAll('.selected'));
+        selectedElements.forEach(el => el.classList.remove('selected'));
+
         try {
             await ensureModernScreenshot();
 
@@ -3519,6 +3523,9 @@ function applyHorizontalStretch(element, ratio) {
             // 还原网页上的缩放
             canvasEl.style.zoom = originalZoom;
 
+            // 恢复所有元素的选中状态
+            selectedElements.forEach(el => el.classList.add('selected'));
+
             // 触发下载
             const suffix = removeBorder ? '_无边框' : '';
             const pngUrl = finalCanvas.toDataURL('image/png');
@@ -3546,6 +3553,8 @@ function applyHorizontalStretch(element, ratio) {
             if (svgBorder) {
                 svgBorder.style.display = originalSvgDisplay;
             }
+            // 恢复所有元素的选中状态
+            selectedElements.forEach(el => el.classList.add('selected'));
         } finally {
             // 隐藏导出弹窗
             toggleExportPopup(false);
@@ -3582,6 +3591,10 @@ function applyHorizontalStretch(element, ratio) {
         toggleExportPopup(true);
 
         let exportSuccess = false;
+
+        // 临时移除所有选中状态，防止高亮描边被导出
+        const selectedElements = Array.from(document.querySelectorAll('.selected'));
+        selectedElements.forEach(el => el.classList.remove('selected'));
 
         try {
             // 1. 临时重置页面缩放，确保物理像素坐标计算为 1:1
@@ -3943,6 +3956,9 @@ function applyHorizontalStretch(element, ratio) {
             // 8. 还原网页当前的真实缩放状态
             canvas.style.zoom = originalZoom;
 
+            // 9. 恢复所有元素的选中状态
+            selectedElements.forEach(el => el.classList.add('selected'));
+
             // 9. 生成离线标准 SVG 矢量文件并触发浏览器下载
             const suffix = includeBorder ? '' : '_无边框';
             const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
@@ -3963,6 +3979,9 @@ function applyHorizontalStretch(element, ratio) {
             // 隐藏导出弹窗
             toggleExportPopup(false);
             exportAbortController = null;
+
+            // 恢复所有元素的选中状态（如果之前未恢复）
+            selectedElements.forEach(el => el.classList.add('selected'));
 
             // 显示 Toast 提示
             if (exportSuccess) {
