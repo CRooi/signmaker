@@ -1510,22 +1510,53 @@ function applyHorizontalStretch(element, ratio) {
         const doubleLineComponents = Array.from(canvas.querySelectorAll('.lineColorTextDouble, .doubleLineTextBox'));
         if (doubleLineComponents.length === 0) {
             canvas.style.removeProperty('--double-line-top-space');
+            canvas.style.removeProperty('--double-line-main-height');
+            canvas.style.removeProperty('--double-line-main-scale');
+            canvas.style.removeProperty('--double-line-side-padding');
+            canvas.style.removeProperty('--double-line-zone-gap');
             return;
         }
 
-        const overlap = 12;
+        const overlap = 10;
         const safetyPadding = 5;
+        const getNaturalWidth = (element) => {
+            const originalWidth = element.style.width;
+            const originalMinWidth = element.style.minWidth;
+            const originalMaxWidth = element.style.maxWidth;
+
+            element.style.width = 'max-content';
+            element.style.minWidth = 'max-content';
+            element.style.maxWidth = 'none';
+
+            const width = Math.ceil(element.scrollWidth);
+
+            element.style.width = originalWidth;
+            element.style.minWidth = originalMinWidth;
+            element.style.maxWidth = originalMaxWidth;
+
+            return width;
+        };
         const maxHeight = doubleLineComponents.reduce((max, component) => {
             component.style.width = '';
+            component.style.minWidth = '';
 
-            const smallTextBox = component.querySelector('.smallTextBox');
-            const mainTextBox = component.classList.contains('textBox')
+            let mainTextBox = component.classList.contains('textBox')
                 ? component
                 : Array.from(component.children).find(child => child.classList?.contains('textBox'));
+            const smallTextBox = component.querySelector('.smallTextBox');
+
+            if (smallTextBox && mainTextBox && smallTextBox.parentElement === mainTextBox && mainTextBox.parentElement === component) {
+                component.insertBefore(smallTextBox, mainTextBox);
+            }
 
             if (smallTextBox && mainTextBox) {
-                const smallWidth = smallTextBox.scrollWidth;
-                const mainWidth = mainTextBox.scrollWidth;
+                mainTextBox.style.width = '';
+                mainTextBox.style.minWidth = '';
+                smallTextBox.style.width = '';
+                smallTextBox.style.minWidth = '';
+
+                const smallWidth = getNaturalWidth(smallTextBox);
+                const mainWidth = getNaturalWidth(mainTextBox);
                 const maxWidth = Math.ceil(Math.max(smallWidth, mainWidth));
                 const alignValue = component.dataset.manualAlign || 'left';
                 const alignItemsMap = {
@@ -1533,11 +1564,20 @@ function applyHorizontalStretch(element, ratio) {
                     center: 'center',
                     right: 'flex-end'
                 };
+                const transformOriginMap = {
+                    left: 'left center',
+                    center: 'center',
+                    right: 'right center'
+                };
                 component.style.width = `${maxWidth}px`;
+                component.style.minWidth = `${maxWidth}px`;
                 mainTextBox.style.width = `${maxWidth}px`;
+                mainTextBox.style.minWidth = `${maxWidth}px`;
                 smallTextBox.style.width = `${maxWidth}px`;
+                smallTextBox.style.minWidth = `${maxWidth}px`;
                 mainTextBox.style.alignItems = alignItemsMap[alignValue] || 'flex-start';
                 smallTextBox.style.alignItems = alignItemsMap[alignValue] || 'flex-start';
+                mainTextBox.style.transformOrigin = transformOriginMap[alignValue] || 'left center';
 
                 component.querySelectorAll('.smallTextCN, .smallTextEN, .textCN, .textEN').forEach(textEl => {
                     textEl.style.textAlign = alignValue;
@@ -1549,7 +1589,16 @@ function applyHorizontalStretch(element, ratio) {
         }, 0);
 
         canvas.style.setProperty('--double-line-small-offset', `${overlap}px`);
-        canvas.style.setProperty('--double-line-top-space', `${Math.max(0, maxHeight - overlap + safetyPadding)}px`);
+        const topSpace = Math.max(0, maxHeight - overlap + safetyPadding);
+        const canvasHeight = parseFloat(getComputedStyle(canvas).getPropertyValue('--canvas-height')) || 90;
+        const mainHeight = Math.max(0, canvasHeight - topSpace);
+        const mainScale = canvasHeight > 0 ? mainHeight / canvasHeight : 1;
+
+        canvas.style.setProperty('--double-line-top-space', `${topSpace}px`);
+        canvas.style.setProperty('--double-line-main-height', `${mainHeight}px`);
+        canvas.style.setProperty('--double-line-main-scale', mainScale.toFixed(4));
+        canvas.style.setProperty('--double-line-side-padding', `${(16 * mainScale).toFixed(2)}px`);
+        canvas.style.setProperty('--double-line-zone-gap', `${(16 * mainScale).toFixed(2)}px`);
     }
 
     // 属性面板数据绑定
@@ -1686,6 +1735,52 @@ function applyHorizontalStretch(element, ratio) {
                         group.appendChild(rowSpacing);
                     }
                 });
+
+                if (element.classList.contains('zone')) {
+                    const rowDoubleLine = document.createElement('div');
+                    rowDoubleLine.className = 'controlRow doubleLineMode';
+
+                    const labelDoubleLine = document.createElement('label');
+                    labelDoubleLine.textContent = '双行模式';
+                    rowDoubleLine.appendChild(labelDoubleLine);
+
+                    const listEl = document.createElement('div');
+                    listEl.className = 'optionListGrid';
+                    const currentMode = element.classList.contains('doubleLineMode') ? 'on' : 'off';
+
+                    const updateDoubleLineMode = (mode) => {
+                        listEl.querySelectorAll('.optionBtn').forEach(b => b.classList.remove('active'));
+                        const targetBtn = Array.from(listEl.children).find(b => b.dataset.value === mode);
+                        if (targetBtn) targetBtn.classList.add('active');
+
+                        if (mode === 'on') {
+                            element.classList.add('doubleLineMode');
+                            element.dataset.doubleLineMode = 'true';
+                        } else {
+                            element.classList.remove('doubleLineMode');
+                            delete element.dataset.doubleLineMode;
+                        }
+                        updateDoubleLineTopSpace();
+                    };
+
+                    [
+                        { value: 'off', label: '关闭' },
+                        { value: 'on', label: '开启' }
+                    ].forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'optionBtn';
+                        btn.textContent = opt.label;
+                        btn.dataset.value = opt.value;
+                        if (opt.value === currentMode) btn.classList.add('active');
+                        btn.addEventListener('click', () => {
+                            updateDoubleLineMode(opt.value);
+                        });
+                        listEl.appendChild(btn);
+                    });
+
+                    rowDoubleLine.appendChild(listEl);
+                    group.appendChild(rowDoubleLine);
+                }
 
                 container.appendChild(group);
                 return;
@@ -2030,7 +2125,7 @@ function applyHorizontalStretch(element, ratio) {
                                     input.querySelectorAll('.optionBtn').forEach(b => b.classList.remove('active'));
                                     btn.classList.add('active');
 
-                                    const isLineColorText = element.classList.contains('lineColorText') || element.closest('.lineColorText') || (element.classList.contains('zone') && element.querySelector('.lineColorText'));
+                                    const isLineColorText = element.classList.contains('lineColorText') || element.classList.contains('lineColorTextDouble') || element.closest('.lineColorText, .lineColorTextDouble') || (element.classList.contains('zone') && element.querySelector('.lineColorText, .lineColorTextDouble'));
 
                                     // 记忆线路 ID，提高状态读取的可靠性
                                     element.dataset.lineId = line.id;
@@ -2182,7 +2277,7 @@ function applyHorizontalStretch(element, ratio) {
                                 if (!e.target.value) return;
                                 const line = JSON.parse(e.target.value);
 
-                                const isLineColorText = element.classList.contains('lineColorText') || element.closest('.lineColorText') || (element.classList.contains('zone') && element.querySelector('.lineColorText'));
+                                const isLineColorText = element.classList.contains('lineColorText') || element.classList.contains('lineColorTextDouble') || element.closest('.lineColorText, .lineColorTextDouble') || (element.classList.contains('zone') && element.querySelector('.lineColorText, .lineColorTextDouble'));
 
                                 // 记忆线路 ID，提高状态读取的可靠性
                                 element.dataset.lineId = line.id;

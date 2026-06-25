@@ -1068,11 +1068,6 @@ h3 {
     backface-visibility: hidden;
 }
 
-#canvas:has(.lineColorTextDouble),
-#canvas:has(.doubleLineTextBox) {
-    padding-top: var(--double-line-top-space, 0px);
-}
-
 #canvas-svg-border {
     position: absolute;
     /* 核心定位：利用 CSS 变量将 SVG 容器外扩到原本的边框区域 */
@@ -1157,6 +1152,8 @@ h3 {
 .largeText,
 .textCN,
 .textEN,
+.smallTextCN,
+.smallTextEN,
 .textBox {
     white-space: nowrap;
 }
@@ -1180,16 +1177,16 @@ h3 {
 .smallTextBox {
     display: flex;
     flex-flow: column nowrap;
-    gap: 2px;
+    gap: 1px;
     margin-bottom: 0;
 }
 
 .lineColorTextDouble,
 .doubleLineTextBox {
-    height: var(--canvas-height, 90px);
+    height: var(--double-line-main-height, var(--canvas-height, 90px));
     position: relative;
     min-width: max-content;
-    justify-content: flex-start;
+    justify-content: center;
 }
 
 .lineColorTextDouble.textBox,
@@ -1225,7 +1222,7 @@ h3 {
 }
 
 .smallTextCN {
-    font-size: 18px;
+    font-size: 15px;
     font-weight: var(--med-text-weight, 400);
     font-family: var(--med-text-font, 'IBM Plex Sans SC');
     text-box: trim-both cap alphabetic;
@@ -1233,7 +1230,7 @@ h3 {
 }
 
 .smallTextEN {
-    font-size: 12px;
+    font-size: 10px;
     font-family: var(--small-text-font, 'Geist');
     font-weight: var(--small-text-weight, 400);
     color: var(--fg-color, inherit);
@@ -1278,6 +1275,10 @@ svg.icon {
     position: relative;
 }
 
+.column:has(.lineColorTextDouble, .doubleLineTextBox) {
+    --double-line-main-height: calc(var(--canvas-height, 90px) - var(--double-line-top-space, 0px));
+}
+
 /* --- Zone Styles --- */
 .zone {
     padding: 0 16px;
@@ -1289,16 +1290,42 @@ svg.icon {
     position: relative;
 }
 
+.zone:has(.lineColorTextDouble, .doubleLineTextBox),
+#canvas:has(.lineColorTextDouble, .doubleLineTextBox) .zone.doubleLineMode {
+    padding-top: var(--double-line-top-space, 0px);
+    padding-left: var(--double-line-side-padding, 16px);
+    padding-right: var(--double-line-side-padding, 16px);
+    gap: var(--double-line-zone-gap, 16px);
+    box-sizing: border-box;
+}
+
+#canvas:has(.lineColorTextDouble, .doubleLineTextBox) .lineColorTextDouble > .textBox,
+#canvas:has(.lineColorTextDouble, .doubleLineTextBox) .doubleLineTextBox > .textBox {
+    transform-origin: center;
+    scale: var(--double-line-main-scale, 1);
+}
+
+#canvas:has(.lineColorTextDouble, .doubleLineTextBox) .zone.doubleLineMode > :not(.lineColorTextDouble):not(.doubleLineTextBox) {
+    transform-origin: center;
+    scale: var(--double-line-main-scale, 1);
+}
+
 .zone:has(.lineColorTextDouble)::before,
 .zone:has(.doubleLineTextBox)::before {
     content: '';
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 100%;
+    top: 0;
     height: var(--double-line-top-space, 0px);
     background-color: var(--current-line-bg, inherit);
     pointer-events: none;
+    z-index: 0;
+}
+
+.zone:has(.lineColorTextDouble) > *,
+.zone:has(.doubleLineTextBox) > * {
+    z-index: 1;
 }
 
 .zone:empty {
