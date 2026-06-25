@@ -588,6 +588,30 @@
         });
     }
 
+    function makeCanvasComponentDraggable(element) {
+        if (!element || element.classList.contains('zone')) return;
+        element.draggable = true;
+        element.addEventListener('dragstart', (e) => {
+            e.stopPropagation();
+            const sourceZone = element.closest('.zone');
+            if (!sourceZone) return;
+            const payload = {
+                kind: 'existing-component',
+                id: element.id,
+                sourceZoneId: sourceZone.id
+            };
+            currentDragPayload = payload;
+            const payloadStr = JSON.stringify(payload);
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('application/json', payloadStr);
+            e.dataTransfer.setData('text/plain', payloadStr);
+        });
+        element.addEventListener('dragend', () => {
+            currentDragPayload = null;
+            hideInsertLine();
+        });
+    }
+
     function renderBasicComponent(component, tags = {}, componentId, isInComposite = false) {
         const root = createElementFromHTML(component.html);
         if (!root) throw new Error(`基础组件解析失败: ${component.id}`);
@@ -601,6 +625,7 @@
                 e.stopPropagation();
                 openPropertyPanel(root);
             });
+            makeCanvasComponentDraggable(root);
         }
         return root;
     }
@@ -625,6 +650,7 @@
             openPropertyPanel(composite);
         });
 
+        makeCanvasComponentDraggable(composite);
         return composite;
     }
 
@@ -678,7 +704,7 @@
         if (zone.classList.contains('lineColor')) {
             zone.dataset.feature = 'selectLine zoneTextWidth zoneAlign advancedOptions';
         } else {
-            zone.dataset.feature = 'zoneTextWidth zoneAlign advancedOptions';
+            zone.dataset.feature = 'zoneColor zoneTextWidth zoneAlign advancedOptions';
         }
 
         zone.addEventListener('click', (e) => {
@@ -700,10 +726,20 @@
     }
 
     function appendComponentToZone(category, zoneClass, node, canvas) {
-        // Search across all columns for an existing zone with this category
-        const existing = canvas.querySelector(`.column .zone[data-category="${category}"]`);
-        const zone = existing || createZoneElement(category, zoneClass, canvas);
+        const zone = createZoneElement(category, zoneClass, canvas);
         zone.appendChild(node);
+        return zone;
+    }
+
+    function createEmptyZone(canvas) {
+        const zone = createZoneElement('basic', 'zone basic emptyZone', canvas);
+        openPropertyPanel(zone);
+        return zone;
+    }
+
+    function createLineColorZone(canvas) {
+        const zone = createZoneElement('lineColor', 'zone lineColor emptyZone', canvas);
+        openPropertyPanel(zone);
         return zone;
     }
 
@@ -750,12 +786,13 @@
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'componentItem';
+        button.dataset.id = item.id;
 
         const thumbnail = document.createElement('img');
         let srcPath = `icon/thumbnail/${item.id}.svg`;
 
         // Adjust thumbnail path for addons
-        if (currentAddonId !== 'default' && !srcPath.startsWith('http') && !srcPath.startsWith('data:') && !srcPath.startsWith('./addons/')) {
+        if (!item.useDefaultThumbnail && currentAddonId !== 'default' && !srcPath.startsWith('http') && !srcPath.startsWith('data:') && !srcPath.startsWith('./addons/')) {
             srcPath = `./addons/${currentAddonId}/${srcPath}`;
         }
 
@@ -795,6 +832,20 @@
 
         button.draggable = true;
         button.addEventListener('dragstart', (e) => {
+            if (kind === 'zone') {
+                const payload = {
+                    kind: 'zone',
+                    id: item.id,
+                    category: item.zoneCategory || 'basic',
+                    zoneClass: item.zoneClass || 'zone basic emptyZone',
+                    name: item.name
+                };
+                currentDragPayload = payload;
+                const payloadStr = JSON.stringify(payload);
+                e.dataTransfer.setData('application/json', payloadStr);
+                e.dataTransfer.setData('text/plain', payloadStr);
+                return;
+            }
             // 处理 category 为字符串或数组的情况
             let categoryValue = item.category || kind;
             if (Array.isArray(categoryValue)) {
@@ -881,7 +932,37 @@
         }, categoryId);
         list.appendChild(compositeGroup);
 
-        const basicGroup = createComponentsGroup('基础组件', basicComponents, (basic) => {
+        const zoneComponent = {
+            id: 'zone',
+            name: '区域',
+            description: '空白',
+            category: 'basic',
+            zoneCategory: 'basic',
+            zoneClass: 'zone basic emptyZone',
+            useDefaultThumbnail: true
+        };
+        const lineColorZoneComponent = {
+            id: 'zoneLine',
+            name: '区域',
+            description: '线路',
+            category: 'basic',
+            zoneCategory: 'lineColor',
+            zoneClass: 'zone lineColor emptyZone',
+            useDefaultThumbnail: true
+        };
+        const basicItems = [zoneComponent, lineColorZoneComponent, ...basicComponents];
+
+        const basicGroup = createComponentsGroup('基础组件', basicItems, (basic) => {
+            if (basic.id === 'zone') {
+                return createComponentButton(basic, 'zone', () => {
+                    createEmptyZone(canvas);
+                }, categoryId);
+            }
+            if (basic.id === 'zoneLine') {
+                return createComponentButton(basic, 'zone', () => {
+                    createLineColorZone(canvas);
+                }, categoryId);
+            }
             return createComponentButton(basic, 'basic', () => {
                 const node = renderBasicComponent(basic, {}, undefined, false);
                 // 处理 category 为字符串或数组的情况
@@ -1243,6 +1324,9 @@
                     e.stopPropagation();
                     openPropertyPanel(el);
                 });
+            }
+            if (!el.classList.contains('column')) {
+                makeCanvasComponentDraggable(el);
             }
             Array.from(el.children).forEach(child => resetAndBind(child));
         }
@@ -1628,6 +1712,32 @@ function applyHorizontalStretch(element, ratio) {
                         group.appendChild(row);
                     });
                 }
+                return;
+            }
+
+            if (featKey === 'zoneColor') {
+                const group = document.createElement('div');
+                group.className = `featureGroup ${featKey}`;
+                group.innerHTML = `<h4>颜色设置</h4>`;
+
+                const row = document.createElement('div');
+                row.className = 'controlRow zoneCustomColor';
+
+                const labelEl = document.createElement('label');
+                labelEl.textContent = '自定义颜色';
+                row.appendChild(labelEl);
+
+                const input = document.createElement('input');
+                input.type = 'color';
+                const currentColor = element.style.backgroundColor || getComputedStyle(element).backgroundColor;
+                input.value = rgb2hex(currentColor);
+                input.addEventListener('input', () => {
+                    element.style.backgroundColor = input.value;
+                });
+
+                row.appendChild(input);
+                group.appendChild(row);
+                container.appendChild(group);
                 return;
             }
 
@@ -2886,7 +2996,7 @@ function applyHorizontalStretch(element, ratio) {
                 if (zone.classList.contains('lineColor')) {
                     zone.dataset.feature = 'selectLine zoneTextWidth zoneAlign advancedOptions';
                 } else {
-                    zone.dataset.feature = 'zoneTextWidth zoneAlign advancedOptions';
+                    zone.dataset.feature = 'zoneColor zoneTextWidth zoneAlign advancedOptions';
                 }
 
                 if (zoneData.style) {
@@ -2928,6 +3038,7 @@ function applyHorizontalStretch(element, ratio) {
                             openPropertyPanel(el);
                         });
                     }
+                    makeCanvasComponentDraggable(el);
 
                     zone.appendChild(el);
 
@@ -4779,6 +4890,17 @@ function applyHorizontalStretch(element, ratio) {
 
     async function handleDrop(payload, e, composites, basicComponents, canvas) {
         try {
+            if (payload.kind === 'zone') {
+                const targetColumn = document.elementFromPoint(e.clientX, e.clientY)?.closest('.column') || null;
+                createZoneElement(payload.category || 'basic', payload.zoneClass || 'zone basic emptyZone', canvas, null, targetColumn);
+                return;
+            }
+
+            if (payload.kind === 'existing-component') {
+                moveExistingComponent(payload, e);
+                return;
+            }
+
             const { id } = payload;
             const category = id === 'lineColorText' ? 'lineColor' : (payload.category || 'default');
             const zoneClass = id === 'lineColorText' ? 'zone lineColor' : `zone ${category}`;
@@ -4846,6 +4968,41 @@ function applyHorizontalStretch(element, ratio) {
         }
     }
 
+    function moveExistingComponent(payload, e) {
+        const node = document.getElementById(payload.id);
+        if (!node || node.classList.contains('zone')) return;
+
+        const sourceZone = node.closest('.zone');
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        let targetZone = el ? el.closest('.zone') : null;
+
+        if (!targetZone && selectedElement) {
+            targetZone = selectedElement.classList.contains('zone')
+                ? selectedElement
+                : selectedElement.closest('.zone');
+        }
+
+        if (!targetZone || targetZone === node || node.contains(targetZone)) return;
+
+        const children = Array.from(targetZone.children).filter(child => child !== node && !child.classList.contains('insert-line'));
+        let inserted = false;
+        for (const child of children) {
+            const rect = child.getBoundingClientRect();
+            if (e.clientX < rect.left + rect.width / 2) {
+                targetZone.insertBefore(node, child);
+                inserted = true;
+                break;
+            }
+        }
+        if (!inserted) targetZone.appendChild(node);
+
+        if (sourceZone && sourceZone.children.length === 0) {
+            sourceZone.classList.add('emptyZone');
+        }
+        targetZone.classList.remove('emptyZone');
+        openPropertyPanel(node);
+    }
+
     function createNodeFromPayload(payload, composites, basicComponents) {
         if (payload.kind === 'composite') {
             const comp = composites.find((c) => c.id === payload.id);
@@ -4901,6 +5058,29 @@ function applyHorizontalStretch(element, ratio) {
         const x = e.clientX; const canvasRect = canvas.getBoundingClientRect();
         const el = document.elementFromPoint(x, e.clientY);
         const targetZone = el ? el.closest('.zone') : null;
+
+        if (payload.kind === 'existing-component') {
+            if (!targetZone) {
+                hideInsertLine();
+                return;
+            }
+            const children = Array.from(targetZone.children).filter(child => child.id !== payload.id);
+            for (let child of children) {
+                const rect = child.getBoundingClientRect();
+                if (x < (rect.left + rect.width / 2)) {
+                    showInsertLineAt(canvas, rect.left - canvasRect.left, targetZone.getBoundingClientRect().top - canvasRect.top, targetZone.clientHeight);
+                    return;
+                }
+            }
+            const zoneRect = targetZone.getBoundingClientRect();
+            showInsertLineAt(canvas, zoneRect.right - canvasRect.left, zoneRect.top - canvasRect.top, targetZone.clientHeight);
+            return;
+        }
+
+        if (payload.kind === 'zone') {
+            hideInsertLine();
+            return;
+        }
 
         const payloadCategory = payload.id === 'lineColorText' ? 'lineColor' : payload.category;
 

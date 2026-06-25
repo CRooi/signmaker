@@ -264,6 +264,10 @@ h3 {
     box-sizing: border-box;
 }
 
+.componentItem[data-id="zone"] .componentThumbnail {
+    padding: 24px;
+}
+
 .componentGroup.facility img {
     filter: brightness(0) invert(1)!important;
 }
@@ -1229,6 +1233,13 @@ svg.icon {
     align-items: center;
     gap: 16px;
     height: 100%;
+}
+
+.zone:empty {
+    min-width: 120px;
+    border: 2px dashed currentColor;
+    opacity: 0.65;
+    box-sizing: border-box;
 }
 
 .zone.lineColor {
