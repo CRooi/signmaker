@@ -1441,6 +1441,22 @@ function applyHorizontalStretch(element, ratio) {
         return "#" + hex(rgbMatch[1]) + hex(rgbMatch[2]) + hex(rgbMatch[3]);
     }
 
+    function applyCompositeOrderByAlignment(compositeEl, alignValue) {
+        if (!compositeEl || !compositeEl.classList.contains('composite')) return;
+        const classes = compositeEl.className.split(/\s+/);
+        const compConfig = compositeComponents.find(c => classes.includes(c.id));
+        if (!compConfig) return;
+
+        if (compConfig.colorBarAdjustment) {
+            const colorBar = compositeEl.querySelector('.colorBar');
+            if (colorBar) colorBar.style.order = (alignValue === 'right') ? '99' : '';
+        }
+
+        if (compConfig.invertOrder) {
+            compositeEl.style.flexDirection = (alignValue === 'right') ? 'row-reverse' : '';
+        }
+    }
+
     // 属性面板数据绑定
     function openPropertyPanel(element) {
         const container = document.getElementById('featureControls');
@@ -1682,16 +1698,7 @@ function applyHorizontalStretch(element, ratio) {
                                 
                                 const compositeEls = element.querySelectorAll('.composite');
                                 compositeEls.forEach(compEl => {
-                                    const classes = compEl.className.split(/\s+/);
-                                    const compConfig = compositeComponents.find(c => classes.includes(c.id));
-                                    if (!compConfig) return;
-                                    if (compConfig.colorBarAdjustment) {
-                                        const colorBar = compEl.querySelector('.colorBar');
-                                        if (colorBar) colorBar.style.order = (alignValue === 'right') ? '99' : '';
-                                    }
-                                    if (compConfig.invertOrder) {
-                                        compEl.style.flexDirection = (alignValue === 'right') ? 'row-reverse' : '';
-                                    }
+                                    applyCompositeOrderByAlignment(compEl, alignValue);
                                 });
                             };
 
@@ -1853,6 +1860,8 @@ function applyHorizontalStretch(element, ratio) {
                             textEls.forEach(el => { 
                                 el.style.textAlign = alignValue; 
                             });
+
+                            applyCompositeOrderByAlignment(element, alignValue);
                         };
 
                         [{ value: 'left', label: '左' }, { value: 'center', label: '中' }, { value: 'right', label: '右' }].forEach(opt => {
