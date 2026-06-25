@@ -679,18 +679,24 @@ h3 {
     visibility: visible;
 }
 
-.propertyPanel {
+.propertyPanelWrapper {
     position: absolute;
     bottom: 24px;
     left: 50%;
     transform: translateX(-50%);
     width: 360px;
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 8px;
+    z-index: 5;
+}
+
+.propertyPanel {
     background: var(--bg-panel);
     padding: 12px;
     display: flex;
     flex-flow: column nowrap;
     gap: 8px;
-    z-index: 5;
     box-sizing: border-box;
 }
 
@@ -762,20 +768,15 @@ h3 {
 
 /* --- Row Actions Bar (Multi-row Management) --- */
 .rowActionsBar {
-    position: absolute;
-    bottom: 220px;
-    left: 50%;
-    transform: translateX(-50%);
     background: var(--bg-panel);
     padding: 6px 12px;
     display: none;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    z-index: 5;
     box-sizing: border-box;
     white-space: nowrap;
-    width: 360px;
+    width: 100%;
 }
 
 .rowActionsBar.active {
