@@ -1,0 +1,8 @@
+<svg width="117" height="100" viewBox="0 0 117 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="117" height="100" rx="6" fill="#FFFFFF"/>
+  <rect x="0.5" y="0.5" width="116" height="99" rx="5.5" stroke="#D9D9D9"/>
+  <text x="18" y="26" fill="#333333" font-family="Arial, sans-serif" font-size="14" font-weight="700">小文本</text>
+  <text x="18" y="41" fill="#333333" font-family="Arial, sans-serif" font-size="8">Small Text</text>
+  <text x="18" y="70" fill="#333333" font-family="Arial, sans-serif" font-size="28" font-weight="700">文本</text>
+  <text x="18" y="88" fill="#333333" font-family="Arial, sans-serif" font-size="13">Text</text>
+</svg>

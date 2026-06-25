@@ -1068,6 +1068,11 @@ h3 {
     backface-visibility: hidden;
 }
 
+#canvas:has(.lineColorTextDouble),
+#canvas:has(.doubleLineTextBox) {
+    padding-top: var(--double-line-top-space, 0px);
+}
+
 #canvas-svg-border {
     position: absolute;
     /* 核心定位：利用 CSS 变量将 SVG 容器外扩到原本的边框区域 */
@@ -1172,6 +1177,38 @@ h3 {
     margin-top: 2px;
 }
 
+.smallTextBox {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 2px;
+    margin-bottom: 0;
+}
+
+.lineColorTextDouble,
+.doubleLineTextBox {
+    height: var(--canvas-height, 90px);
+    position: relative;
+    min-width: max-content;
+    justify-content: flex-start;
+}
+
+.lineColorTextDouble.textBox,
+.doubleLineTextBox .textBox {
+    gap: 5px;
+    align-items: flex-start;
+}
+
+.lineColorTextDouble .smallTextBox,
+.doubleLineTextBox .smallTextBox {
+    position: absolute;
+    left: 0;
+    bottom: 100%;
+    transform: translateY(var(--double-line-small-offset, 8px));
+    z-index: 2;
+    min-width: 100%;
+    align-items: flex-start;
+}
+
 .textCN {
     font-size: 33px;
     font-weight: var(--med-text-weight, 400);
@@ -1182,6 +1219,21 @@ h3 {
 
 .textEN {
     font-size: 21px;
+    font-family: var(--small-text-font, 'Geist');
+    font-weight: var(--small-text-weight, 400);
+    color: var(--fg-color, inherit);
+}
+
+.smallTextCN {
+    font-size: 18px;
+    font-weight: var(--med-text-weight, 400);
+    font-family: var(--med-text-font, 'IBM Plex Sans SC');
+    text-box: trim-both cap alphabetic;
+    color: var(--fg-color, inherit);
+}
+
+.smallTextEN {
+    font-size: 12px;
     font-family: var(--small-text-font, 'Geist');
     font-weight: var(--small-text-weight, 400);
     color: var(--fg-color, inherit);
@@ -1234,6 +1286,19 @@ svg.icon {
     align-items: center;
     gap: 16px;
     height: 100%;
+    position: relative;
+}
+
+.zone:has(.lineColorTextDouble)::before,
+.zone:has(.doubleLineTextBox)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: var(--double-line-top-space, 0px);
+    background-color: var(--current-line-bg, inherit);
+    pointer-events: none;
 }
 
 .zone:empty {

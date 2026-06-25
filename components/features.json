@@ -33,6 +33,46 @@
       }
     ]
   },
+  "editDoubleLineText": {
+    "label": "编辑文本",
+    "controls": [
+      {
+        "id": "smallTextCN",
+        "type": "text",
+        "target": ".smallTextCN",
+        "label": "小号中文"
+      },
+      {
+        "id": "smallTextEN",
+        "type": "text",
+        "target": ".smallTextEN",
+        "label": "小号英文"
+      },
+      {
+        "id": "textCN",
+        "type": "text",
+        "target": ".textCN",
+        "label": "大号中文"
+      },
+      {
+        "id": "textEN",
+        "type": "text",
+        "target": ".textEN",
+        "label": "大号英文"
+      },
+      {
+        "id": "textAlign",
+        "type": "dropdown",
+        "label": "对齐",
+        "options": [
+          { "name": "左", "value": "left" },
+          { "name": "中", "value": "center" },
+          { "name": "右", "value": "right" }
+        ],
+        "useList": true
+      }
+    ]
+  },
   "rotateIcon": {
     "label": "旋转角度",
     "controls": [

@@ -47,6 +47,14 @@
     "html": "<div class='textBox'><span class='textCN'>文本</span><span class='textEN'>Text</span></div>"
   },
   {
+    "id": "doubleLineTextBox",
+    "name": "双行文本框",
+    "description": "",
+    "category": "basic",
+    "feature": "editDoubleLineText",
+    "html": "<div class='composite doubleLineTextBox' style='color: #000000;'><div class='smallTextBox'><span class='smallTextCN'>小文本</span><span class='smallTextEN'>Small Text</span></div><div class='textBox'><span class='textCN'>文本</span><span class='textEN'>Text</span></div></div>"
+  },
+  {
     "id": "colorBar",
     "name": "色带",
     "description": "",

@@ -431,6 +431,26 @@
       ]
     },
     {
+      "id": "lineColorTextDouble",
+      "name": "线路色文字",
+      "description": "双行",
+      "thumbnailBg": "dark",
+      "category": "enter",
+      "feature": "editDoubleLineText",
+      "type": "composite",
+      "ingredients": [
+        {
+          "componentId": "textBox",
+          "props": {
+            "smallTextCN": "外环",
+            "smallTextEN": "Counter-clockwise Loop",
+            "textCN": "方向",
+            "textEN": "To"
+          }
+        }
+      ]
+    },
+    {
       "id": "exit",
       "name": "出口",
       "description": "",

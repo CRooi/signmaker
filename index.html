@@ -533,6 +533,7 @@
         const btnZoomIn = document.getElementById('btnZoomIn');
         if (btnZoomOut) btnZoomOut.disabled = zoomLevel <= MIN_ZOOM;
         if (btnZoomIn) btnZoomIn.disabled = zoomLevel >= MAX_ZOOM;
+        requestAnimationFrame(updateDoubleLineTopSpace);
     }
 
     function applyTagsToElement(element, tags) {
@@ -618,6 +619,22 @@
         const root = createElementFromHTML(component.html);
         if (!root) throw new Error(`基础组件解析失败: ${component.id}`);
         root.id = componentId || `component${componentCounter++}`;
+        if (component.id === 'textBox' && (tags.smallTextCN !== undefined || tags.smallTextEN !== undefined)) {
+            const smallTextBox = document.createElement('div');
+            smallTextBox.className = 'smallTextBox';
+
+            const smallTextCN = document.createElement('span');
+            smallTextCN.className = 'smallTextCN';
+            smallTextCN.textContent = tags.smallTextCN || '小中文';
+
+            const smallTextEN = document.createElement('span');
+            smallTextEN.className = 'smallTextEN';
+            smallTextEN.textContent = tags.smallTextEN || 'Small Text';
+
+            smallTextBox.appendChild(smallTextCN);
+            smallTextBox.appendChild(smallTextEN);
+            root.insertBefore(smallTextBox, root.firstChild);
+        }
         applyTagsToElement(root, tags);
 
         if (!isInComposite) {
@@ -730,6 +747,7 @@
     function appendComponentToZone(category, zoneClass, node, canvas) {
         const zone = createZoneElement(category, zoneClass, canvas);
         zone.appendChild(node);
+        requestAnimationFrame(updateDoubleLineTopSpace);
         return zone;
     }
 
@@ -925,8 +943,9 @@
                         ? categoryId 
                         : categoryValue[0];
                 }
-                const category = item.id === 'lineColorText' ? 'lineColor' : categoryValue;
-                const zoneClass = item.id === 'lineColorText' ? 'zone lineColor' : `zone ${categoryValue}`;
+                const isLineColorTextComponent = item.id === 'lineColorText' || item.id === 'lineColorTextDouble';
+                const category = isLineColorTextComponent ? 'lineColor' : categoryValue;
+                const zoneClass = isLineColorTextComponent ? 'zone lineColor' : `zone ${categoryValue}`;
                 appendComponentToZone(category, zoneClass, node, canvas);
                 convertAllImgToInlineSvg(node);
                 openPropertyPanel(node);
@@ -1113,6 +1132,7 @@
         // Select the new clone
         selectElement(clone);
         openPropertyPanel(clone);
+        requestAnimationFrame(updateDoubleLineTopSpace);
     }
 
     function deleteSelectedElement() {
@@ -1138,6 +1158,7 @@
         }
 
         deselectAll();
+        requestAnimationFrame(updateDoubleLineTopSpace);
     }
 
     function deselectAll() {
@@ -1455,6 +1476,80 @@ function applyHorizontalStretch(element, ratio) {
         if (compConfig.invertOrder) {
             compositeEl.style.flexDirection = (alignValue === 'right') ? 'row-reverse' : '';
         }
+    }
+
+    function isChineseText(value) {
+        return /[\u3400-\u9fff]/.test(value || '');
+    }
+
+    function updateLargeTextSizeByContent(largeTextEl) {
+        if (!largeTextEl) return;
+        largeTextEl.style.fontSize = isChineseText(largeTextEl.textContent) ? '68px' : '';
+    }
+
+    function getLineDisplayText(line) {
+        if (line && line.id === 'Loop') {
+            return {
+                number: '环',
+                nameCN: '线',
+                nameEN: line.nameEN || 'Loop Line'
+            };
+        }
+
+        return {
+            number: line?.number || '',
+            nameCN: line?.nameCN || '',
+            nameEN: line?.nameEN || ''
+        };
+    }
+
+    function updateDoubleLineTopSpace() {
+        const canvas = document.getElementById('canvas');
+        if (!canvas) return;
+
+        const doubleLineComponents = Array.from(canvas.querySelectorAll('.lineColorTextDouble, .doubleLineTextBox'));
+        if (doubleLineComponents.length === 0) {
+            canvas.style.removeProperty('--double-line-top-space');
+            return;
+        }
+
+        const overlap = 12;
+        const safetyPadding = 5;
+        const maxHeight = doubleLineComponents.reduce((max, component) => {
+            component.style.width = '';
+
+            const smallTextBox = component.querySelector('.smallTextBox');
+            const mainTextBox = component.classList.contains('textBox')
+                ? component
+                : Array.from(component.children).find(child => child.classList?.contains('textBox'));
+
+            if (smallTextBox && mainTextBox) {
+                const smallWidth = smallTextBox.scrollWidth;
+                const mainWidth = mainTextBox.scrollWidth;
+                const maxWidth = Math.ceil(Math.max(smallWidth, mainWidth));
+                const alignValue = component.dataset.manualAlign || 'left';
+                const alignItemsMap = {
+                    left: 'flex-start',
+                    center: 'center',
+                    right: 'flex-end'
+                };
+                component.style.width = `${maxWidth}px`;
+                mainTextBox.style.width = `${maxWidth}px`;
+                smallTextBox.style.width = `${maxWidth}px`;
+                mainTextBox.style.alignItems = alignItemsMap[alignValue] || 'flex-start';
+                smallTextBox.style.alignItems = alignItemsMap[alignValue] || 'flex-start';
+
+                component.querySelectorAll('.smallTextCN, .smallTextEN, .textCN, .textEN').forEach(textEl => {
+                    textEl.style.textAlign = alignValue;
+                });
+            }
+
+            if (!smallTextBox) return max;
+            return Math.max(max, Math.ceil(smallTextBox.getBoundingClientRect().height / zoomLevel));
+        }, 0);
+
+        canvas.style.setProperty('--double-line-small-offset', `${overlap}px`);
+        canvas.style.setProperty('--double-line-top-space', `${Math.max(0, maxHeight - overlap + safetyPadding)}px`);
     }
 
     // 属性面板数据绑定
@@ -1798,7 +1893,13 @@ function applyHorizontalStretch(element, ratio) {
                     input = document.createElement('input');
                     input.type = 'text';
                     input.value = targetEl.textContent;
-                    input.addEventListener('input', () => { targetEl.textContent = input.value; });
+                    input.addEventListener('input', () => {
+                        targetEl.textContent = input.value;
+                        if (targetEl.classList.contains('largeText')) {
+                            updateLargeTextSizeByContent(targetEl);
+                        }
+                        updateDoubleLineTopSpace();
+                    });
                 }
                 else if (control.type === 'color' && targetEl) {
                     input = document.createElement('input');
@@ -1840,12 +1941,12 @@ function applyHorizontalStretch(element, ratio) {
                 }
                 else if (control.type === 'dropdown') {
                     // 特殊处理：editText 中的对齐 dropdown
-                    if (featKey === 'editText' && control.label === '对齐') {
+                    if ((featKey === 'editText' || featKey === 'editDoubleLineText') && control.label === '对齐') {
                         const listEl = document.createElement('div');
                         listEl.className = 'optionListGrid';
 
                         // 获取当前对齐状态（优先读取手动设置的状态）
-                        const firstTextEl = element.querySelector('.largeText, .textCN, .textEN');
+                        const firstTextEl = element.querySelector('.largeText, .smallTextCN, .smallTextEN, .textCN, .textEN');
                         // 优先读取手动设置的状态，其次读取实际样式
                         const currentAlignVal = element.dataset.manualAlign || 
                             (firstTextEl ? (firstTextEl.style.textAlign || 'left') : 'left');
@@ -1856,12 +1957,13 @@ function applyHorizontalStretch(element, ratio) {
                             element.dataset.manualAlign = alignValue;
                             
                             // 应用到所有文本元素
-                            const textEls = element.querySelectorAll('.largeText, .textCN, .textEN');
+                            const textEls = element.querySelectorAll('.largeText, .smallTextCN, .smallTextEN, .textCN, .textEN');
                             textEls.forEach(el => { 
                                 el.style.textAlign = alignValue; 
                             });
 
                             applyCompositeOrderByAlignment(element, alignValue);
+                            updateDoubleLineTopSpace();
                         };
 
                         [{ value: 'left', label: '左' }, { value: 'center', label: '中' }, { value: 'right', label: '右' }].forEach(opt => {
@@ -1947,14 +2049,18 @@ function applyHorizontalStretch(element, ratio) {
                                     }
 
                                     if (!isLineColorText) {
+                                        const displayText = getLineDisplayText(line);
                                         const largeText = element.querySelector('.largeText');
-                                        if (largeText && line.number) largeText.textContent = line.number;
+                                        if (largeText && displayText.number) {
+                                            largeText.textContent = displayText.number;
+                                            updateLargeTextSizeByContent(largeText);
+                                        }
 
                                         const textCN = element.querySelector('.textCN');
-                                        if (textCN && line.nameCN) textCN.textContent = line.nameCN;
+                                        if (textCN && displayText.nameCN) textCN.textContent = displayText.nameCN;
 
                                         const textEN = element.querySelector('.textEN');
-                                        if (textEN && line.nameEN) textEN.textContent = line.nameEN;
+                                        if (textEN && displayText.nameEN) textEN.textContent = displayText.nameEN;
                                     }
                                 });
                                 input.appendChild(btn);
@@ -2095,14 +2201,18 @@ function applyHorizontalStretch(element, ratio) {
                                 }
 
                                 if (!isLineColorText) {
+                                    const displayText = getLineDisplayText(line);
                                     const largeText = element.querySelector('.largeText');
-                                    if (largeText) largeText.textContent = line.number;
+                                    if (largeText) {
+                                        largeText.textContent = displayText.number;
+                                        updateLargeTextSizeByContent(largeText);
+                                    }
 
                                     const textCN = element.querySelector('.textCN');
-                                    if (textCN) textCN.textContent = line.nameCN;
+                                    if (textCN) textCN.textContent = displayText.nameCN;
 
                                     const textEN = element.querySelector('.textEN');
-                                    if (textEN) textEN.textContent = line.nameEN;
+                                    if (textEN) textEN.textContent = displayText.nameEN;
                                 }
                             });
                         } else if (isIconDropdown) {
@@ -3067,6 +3177,7 @@ function applyHorizontalStretch(element, ratio) {
         }
 
         deselectAll();
+        requestAnimationFrame(updateDoubleLineTopSpace);
     }
 
     function saveCanvasToFile() {
@@ -4904,6 +5015,7 @@ function applyHorizontalStretch(element, ratio) {
             if (payload.kind === 'zone') {
                 const targetColumn = document.elementFromPoint(e.clientX, e.clientY)?.closest('.column') || null;
                 createZoneElement(payload.category || 'basic', payload.zoneClass || 'zone basic emptyZone', canvas, null, targetColumn);
+                requestAnimationFrame(updateDoubleLineTopSpace);
                 return;
             }
 
@@ -4913,8 +5025,9 @@ function applyHorizontalStretch(element, ratio) {
             }
 
             const { id } = payload;
-            const category = id === 'lineColorText' ? 'lineColor' : (payload.category || 'default');
-            const zoneClass = id === 'lineColorText' ? 'zone lineColor' : `zone ${category}`;
+            const isLineColorTextComponent = id === 'lineColorText' || id === 'lineColorTextDouble';
+            const category = isLineColorTextComponent ? 'lineColor' : (payload.category || 'default');
+            const zoneClass = isLineColorTextComponent ? 'zone lineColor' : `zone ${category}`;
             const x = e.clientX; const y = e.clientY;
             const el = document.elementFromPoint(x, y);
             const targetZone = el ? el.closest('.zone') : null;
@@ -4939,6 +5052,7 @@ function applyHorizontalStretch(element, ratio) {
                     if (!inserted) targetZone.appendChild(newNode);
                     await convertAllImgToInlineSvg(newNode);
                     openPropertyPanel(newNode);
+                    requestAnimationFrame(updateDoubleLineTopSpace);
                     return;
                 }
                 
@@ -4966,6 +5080,7 @@ function applyHorizontalStretch(element, ratio) {
                     if (!inserted) targetZone.appendChild(newNode);
                     await convertAllImgToInlineSvg(newNode);
                     openPropertyPanel(newNode);
+                    requestAnimationFrame(updateDoubleLineTopSpace);
                     return;
                 }
             }
@@ -4974,6 +5089,7 @@ function applyHorizontalStretch(element, ratio) {
             createZoneElement(category, zoneClass, canvas, null, targetColumn).appendChild(newNode);
             await convertAllImgToInlineSvg(newNode);
             openPropertyPanel(newNode);
+            requestAnimationFrame(updateDoubleLineTopSpace);
         } catch (err) {
             console.error('[handleDrop] 拖拽放置失败:', err, 'payload:', payload);
         }
@@ -5012,6 +5128,7 @@ function applyHorizontalStretch(element, ratio) {
         }
         targetZone.classList.remove('emptyZone');
         openPropertyPanel(node);
+        requestAnimationFrame(updateDoubleLineTopSpace);
     }
 
     function createNodeFromPayload(payload, composites, basicComponents) {
