@@ -1484,7 +1484,14 @@ function applyHorizontalStretch(element, ratio) {
 
     function updateLargeTextSizeByContent(largeTextEl) {
         if (!largeTextEl) return;
-        largeTextEl.style.fontSize = isChineseText(largeTextEl.textContent) ? '68px' : '';
+        if (!isChineseText(largeTextEl.textContent)) {
+            largeTextEl.style.fontSize = '';
+            return;
+        }
+
+        const canvas = document.getElementById('canvas');
+        const canvasHeight = canvas ? parseFloat(getComputedStyle(canvas).getPropertyValue('--canvas-height')) || 90 : 90;
+        largeTextEl.style.fontSize = canvasHeight <= 60 ? '40px' : '68px';
     }
 
     function getLineDisplayText(line) {
@@ -3055,6 +3062,7 @@ function applyHorizontalStretch(element, ratio) {
 
         // Apply custom HTML if defined
         applyCustomHTML(style.customHTML);
+        canvas.querySelectorAll('.largeText').forEach(updateLargeTextSizeByContent);
     }
 
     /**
