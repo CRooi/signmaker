@@ -1521,10 +1521,15 @@ function applyHorizontalStretch(element, ratio) {
             canvas.style.removeProperty('--double-line-main-scale');
             canvas.style.removeProperty('--double-line-side-padding');
             canvas.style.removeProperty('--double-line-zone-gap');
+            canvas.style.removeProperty('--double-line-small-offset');
+            canvas.style.removeProperty('--double-line-type-b-small-offset');
+            canvas.style.removeProperty('--double-line-safety-padding');
             return;
         }
 
-        const overlap = 10;
+        const overlap = 10; // 控制小字下压
+        const typeBSmallTextOffset = 5; // 控制 B 类型小字下压
+        const layoutOverlap = 10; // 控制双行布局预留与大字缩放
         const safetyPadding = 5;
         const getNaturalWidth = (element) => {
             const originalWidth = element.style.width;
@@ -1596,7 +1601,8 @@ function applyHorizontalStretch(element, ratio) {
         }, 0);
 
         canvas.style.setProperty('--double-line-small-offset', `${overlap}px`);
-        const topSpace = Math.max(0, maxHeight - overlap + safetyPadding);
+        canvas.style.setProperty('--double-line-type-b-small-offset', `${typeBSmallTextOffset}px`);
+        const topSpace = Math.max(0, maxHeight - layoutOverlap + safetyPadding);
         const canvasHeight = parseFloat(getComputedStyle(canvas).getPropertyValue('--canvas-height')) || 90;
         const mainHeight = Math.max(0, canvasHeight - topSpace);
         const mainScale = canvasHeight > 0 ? mainHeight / canvasHeight : 1;
@@ -1606,6 +1612,86 @@ function applyHorizontalStretch(element, ratio) {
         canvas.style.setProperty('--double-line-main-scale', mainScale.toFixed(4));
         canvas.style.setProperty('--double-line-side-padding', `${(16 * mainScale).toFixed(2)}px`);
         canvas.style.setProperty('--double-line-zone-gap', `${(16 * mainScale).toFixed(2)}px`);
+        canvas.style.setProperty('--double-line-safety-padding', `${safetyPadding}px`);
+        updateDoubleLineTypeBOffsets(canvas);
+    }
+
+    function updateDoubleLineTypeBOffsets(canvas) {
+        const typeBComponents = Array.from(canvas.querySelectorAll('.lineColorTextDouble[data-double-line-type="b"], .doubleLineTextBox[data-double-line-type="b"]'));
+        typeBComponents.forEach(component => {
+            component.style.setProperty('--double-line-type-b-offset', '0px');
+        });
+        if (typeBComponents.length === 0) return;
+
+        requestAnimationFrame(() => {
+            const canvasRect = canvas.getBoundingClientRect();
+            const canvasCenter = canvasRect.top + canvasRect.height / 2;
+
+            typeBComponents.forEach(component => {
+                const mainTextBox = component.classList.contains('textBox')
+                    ? component
+                    : Array.from(component.children).find(child => child.classList?.contains('textBox'));
+                const smallTextBox = component.querySelector('.smallTextBox');
+                if (!mainTextBox || !smallTextBox) return;
+
+                const mainRect = mainTextBox.getBoundingClientRect();
+                const smallRect = smallTextBox.getBoundingClientRect();
+                const groupTop = Math.min(mainRect.top, smallRect.top);
+                const groupBottom = Math.max(mainRect.bottom, smallRect.bottom);
+                const groupCenter = groupTop + (groupBottom - groupTop) / 2;
+                const offset = (canvasCenter - groupCenter) / zoomLevel;
+
+                component.style.setProperty('--double-line-type-b-offset', `${offset.toFixed(2)}px`);
+            });
+        });
+    }
+
+    function isDoubleLineTextComponent(element) {
+        return element?.classList?.contains('lineColorTextDouble') || element?.classList?.contains('doubleLineTextBox');
+    }
+
+    function appendDoubleLineTypeControl(group, element) {
+        const row = document.createElement('div');
+        row.className = 'controlRow doubleLineType';
+
+        const label = document.createElement('label');
+        label.textContent = '类型';
+        row.appendChild(label);
+
+        const listEl = document.createElement('div');
+        listEl.className = 'optionListGrid';
+
+        const currentType = element.dataset.doubleLineType === 'b' ? 'b' : 'a';
+        const setType = (type) => {
+            listEl.querySelectorAll('.optionBtn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.value === type);
+            });
+
+            if (type === 'b') {
+                element.dataset.doubleLineType = 'b';
+            } else {
+                delete element.dataset.doubleLineType;
+            }
+            updateDoubleLineTopSpace();
+        };
+
+        [
+            { value: 'a', label: 'A' },
+            { value: 'b', label: 'B' }
+        ].forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'optionBtn';
+            btn.textContent = opt.label;
+            btn.dataset.value = opt.value;
+            if (opt.value === currentType) btn.classList.add('active');
+            btn.addEventListener('click', () => {
+                setType(opt.value);
+            });
+            listEl.appendChild(btn);
+        });
+
+        row.appendChild(listEl);
+        group.appendChild(row);
     }
 
     // 属性面板数据绑定
@@ -1953,6 +2039,10 @@ function applyHorizontalStretch(element, ratio) {
             const group = document.createElement('div');
             group.className = `featureGroup ${featKey}`;
             group.innerHTML = `<h4>${config.label}</h4>`;
+
+            if (featKey === 'editDoubleLineText' && isDoubleLineTextComponent(element)) {
+                appendDoubleLineTypeControl(group, element);
+            }
 
             config.controls.forEach(control => {
                 let targetEl;

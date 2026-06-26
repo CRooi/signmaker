@@ -1206,6 +1206,40 @@ h3 {
     align-items: flex-start;
 }
 
+.lineColorTextDouble[data-double-line-type="b"],
+.doubleLineTextBox[data-double-line-type="b"] {
+    height: var(--double-line-main-height, var(--canvas-height, 90px));
+    transform: translateY(var(--double-line-type-b-offset, 0px));
+}
+
+.lineColorTextDouble[data-double-line-type="b"] .smallTextBox,
+.doubleLineTextBox[data-double-line-type="b"] .smallTextBox {
+    position: absolute;
+    left: 0;
+    bottom: 100%;
+    transform: translateY(var(--double-line-type-b-small-offset, var(--double-line-small-offset, 8px)));
+}
+
+.lineColorTextDouble[data-double-line-type="b"] .textCN,
+.doubleLineTextBox[data-double-line-type="b"] .textCN {
+    font-size: calc(33px * 0.9);
+}
+
+.lineColorTextDouble[data-double-line-type="b"] .textEN,
+.doubleLineTextBox[data-double-line-type="b"] .textEN {
+    font-size: calc(21px * 0.9);
+}
+
+.lineColorTextDouble[data-double-line-type="b"] .smallTextCN,
+.doubleLineTextBox[data-double-line-type="b"] .smallTextCN {
+    font-size: calc(15px * 1.05);
+}
+
+.lineColorTextDouble[data-double-line-type="b"] .smallTextEN,
+.doubleLineTextBox[data-double-line-type="b"] .smallTextEN {
+    font-size: calc(10px * 1.05);
+}
+
 .textCN {
     font-size: 33px;
     font-weight: var(--med-text-weight, 400);
@@ -1275,7 +1309,7 @@ svg.icon {
     position: relative;
 }
 
-.column:has(.lineColorTextDouble, .doubleLineTextBox) {
+.column:has(.lineColorTextDouble:not([data-double-line-type="b"]), .doubleLineTextBox:not([data-double-line-type="b"])) {
     --double-line-main-height: calc(var(--canvas-height, 90px) - var(--double-line-top-space, 0px));
 }
 
@@ -1290,8 +1324,8 @@ svg.icon {
     position: relative;
 }
 
-.zone:has(.lineColorTextDouble, .doubleLineTextBox),
-#canvas:has(.lineColorTextDouble, .doubleLineTextBox) .zone.doubleLineMode {
+.zone:has(.lineColorTextDouble:not([data-double-line-type="b"]), .doubleLineTextBox:not([data-double-line-type="b"])),
+#canvas:has(.lineColorTextDouble:not([data-double-line-type="b"]), .doubleLineTextBox:not([data-double-line-type="b"])) .zone.doubleLineMode {
     padding-top: var(--double-line-top-space, 0px);
     padding-left: var(--double-line-side-padding, 16px);
     padding-right: var(--double-line-side-padding, 16px);
@@ -1299,19 +1333,19 @@ svg.icon {
     box-sizing: border-box;
 }
 
-#canvas:has(.lineColorTextDouble, .doubleLineTextBox) .lineColorTextDouble > .textBox,
-#canvas:has(.lineColorTextDouble, .doubleLineTextBox) .doubleLineTextBox > .textBox {
+#canvas:has(.lineColorTextDouble, .doubleLineTextBox) .lineColorTextDouble:not([data-double-line-type="b"]) > .textBox,
+#canvas:has(.lineColorTextDouble, .doubleLineTextBox) .doubleLineTextBox:not([data-double-line-type="b"]) > .textBox {
     transform-origin: center;
     scale: var(--double-line-main-scale, 1);
 }
 
-#canvas:has(.lineColorTextDouble, .doubleLineTextBox) .zone.doubleLineMode > :not(.lineColorTextDouble):not(.doubleLineTextBox) {
+#canvas:has(.lineColorTextDouble:not([data-double-line-type="b"]), .doubleLineTextBox:not([data-double-line-type="b"])) .zone.doubleLineMode > :not(.lineColorTextDouble):not(.doubleLineTextBox) {
     transform-origin: center;
     scale: var(--double-line-main-scale, 1);
 }
 
-.zone:has(.lineColorTextDouble)::before,
-.zone:has(.doubleLineTextBox)::before {
+.zone:has(.lineColorTextDouble:not([data-double-line-type="b"]))::before,
+.zone:has(.doubleLineTextBox:not([data-double-line-type="b"]))::before {
     content: '';
     position: absolute;
     left: 0;
@@ -1323,8 +1357,8 @@ svg.icon {
     z-index: 0;
 }
 
-.zone:has(.lineColorTextDouble) > *,
-.zone:has(.doubleLineTextBox) > * {
+.zone:has(.lineColorTextDouble:not([data-double-line-type="b"])) > *,
+.zone:has(.doubleLineTextBox:not([data-double-line-type="b"])) > * {
     z-index: 1;
 }
 
